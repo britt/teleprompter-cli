@@ -3,6 +3,7 @@
 import { Command } from 'commander'
 import axios from 'axios'
 import asTable from 'as-table'
+import * as fs from 'fs'
 
 const program = new Command()
 
@@ -47,14 +48,37 @@ program
   })
 
 program
-  .command('put <promptName>')
+  .command('put <promptName> [promptText]')
   .description('Create a new version of a prompt')
   .option('-u, --url <url>', 'URL of the teleprompter service')
-  .action((promptName: string, options) => {
+  .action(async (promptName: string, promptText: string | undefined, options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
     console.log(`Creating a new version of prompt: ${promptName}`)
     console.log(`Using service URL: ${url}`)
-    // TODO: Implement creation of a new prompt version
+
+    let text: string;
+    if (promptText) {
+      text = promptText;
+    } else if (!process.stdin.isTTY) {
+      text = fs.readFileSync(0, 'utf-8').trim(); // Read from stdin
+    } else {
+      console.error('Error: Prompt text must be provided as an argument or through stdin');
+      process.exit(1);
+    }
+
+    try {
+      const response = await axios.post(`${url}/prompts`, {
+        name: promptName,
+        text: text
+      });
+      console.log('Prompt created successfully:', response.data);
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error creating prompt:', error.message);
+      } else {
+        console.error('An unknown error occurred while creating the prompt');
+      }
+    }
   })
 
 program
