@@ -95,7 +95,7 @@ program
 
       const response = await axios.post(`${url}/prompts`, JSON.stringify({
         id: promptName,
-        text: text
+        prompt: text
       }), {
         headers: {
           'Content-Type': 'application/json',
