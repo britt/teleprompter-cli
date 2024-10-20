@@ -15,6 +15,10 @@
   "author": "Britt Crawford <britt.v.crawford@gmail.com>",
   "license": "MIT",
   "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/britt/teleprompter-cli.git"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.13",
     "@types/node": "^22.7.6",
