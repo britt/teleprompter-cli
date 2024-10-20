@@ -106,7 +106,7 @@ program
 
     let text: string;
     if (promptText) {
-      text = promptText;
+      text = promptText.trim();
     } else if (!process.stdin.isTTY) {
       text = fs.readFileSync(0, 'utf-8').trim(); // Read from stdin
     } else {
@@ -215,7 +215,7 @@ program
       console.log('Prompt details:\n\n')
       console.log('id:', response.data.id)
       console.log('version:', response.data.version)
-      console.log(response.data.prompt)
+      console.log('\n', response.data.prompt.trim())
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('Error fetching prompt:', error.message)
