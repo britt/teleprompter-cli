@@ -105,7 +105,13 @@ program
       });
       console.log('Prompt created successfully:', response.data);
     } catch (error) {
-      if (error instanceof Error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error creating prompt:', error.message);
+        if (error.response) {
+          console.error('Response status:', error.response.status);
+          console.error('Response data:', error.response.data);
+        }
+      } else if (error instanceof Error) {
         console.error('Error creating prompt:', error.message);
       } else {
         console.error('An unknown error occurred while creating the prompt');
