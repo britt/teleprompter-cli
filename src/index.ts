@@ -6,8 +6,8 @@ const program = new Command();
 
 program
   .name('tp')
-  .description('A CLI program that prints Hello World')
-  .version('1.0.0');
+  .description('Teleprompter: A tool for managing LLM prompts and updating them at runtime')
+  .version('0.0.1');
 
 program.action(() => {
   console.log('Hello World');
