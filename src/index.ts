@@ -56,7 +56,8 @@ program
       
       const response = await axios.get(`${url}/prompts`, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`
+          'Authorization': `Bearer ${accessToken}`,
+          'cf-access-token': accessToken
         }
       })
       const prompts = response.data
@@ -103,7 +104,8 @@ program
       }), {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          'Authorization': `Bearer ${accessToken}`,
+          'cf-access-token': accessToken
         }
       });
       console.log('Prompt created successfully:', response.data);
