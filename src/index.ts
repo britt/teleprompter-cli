@@ -99,7 +99,7 @@ program
       await cloudflareAccessLogin(url)
 
       const response = await axios.post(`${url}/prompts`, JSON.stringify({
-        name: promptName,
+        id: promptName,
         text: text
       }), {
         headers: {
