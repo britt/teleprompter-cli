@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander'
+import axios from 'axios'
+import asTable from 'as-table'
 
 const program = new Command()
 
@@ -21,11 +23,23 @@ program
   .command('list')
   .description('List all active prompts')
   .option('-u, --url <url>', 'URL of the teleprompter service')
-  .action((options) => {
+  .action(async (options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
     console.log('Listing all active prompts...')
     console.log(`Using service URL: ${url}`)
-    // TODO: Implement listing of active prompts
+    
+    try {
+      const response = await axios.get(`${url}/prompts`)
+      const prompts = response.data
+      
+      if (Array.isArray(prompts) && prompts.length > 0) {
+        console.log(asTable(prompts))
+      } else {
+        console.log('No active prompts found.')
+      }
+    } catch (error) {
+      console.error('Error fetching prompts:', error.message)
+    }
   })
 
 program
