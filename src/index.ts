@@ -14,12 +14,11 @@ let accessToken: string | null = null
 async function cloudflareAccessLogin(url: string): Promise<string> {
   try {
     const { stdout } = await execAsync(`cloudflared access login ${url}`)
-    const lines = stdout.split('\n')
-    const tokenLine = lines.find(line => line.startsWith('Successfully fetched your token:'))
-    if (!tokenLine) {
+    const tokenMatch = stdout.match(/Successfully fetched your token:\s*([\w.-]+)/)
+    if (!tokenMatch) {
       throw new Error('Token not found in cloudflared output')
     }
-    const token = tokenLine.split(':')[1].trim()
+    const token = tokenMatch[1].trim()
     accessToken = token
     return token
   } catch (error) {
