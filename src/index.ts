@@ -141,11 +141,40 @@ program
   .command('versions <promptName>')
   .description('List all versions of a prompt')
   .option('-u, --url <url>', 'URL of the teleprompter service')
-  .action((promptName: string, options) => {
+  .action(async (promptName: string, options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
     console.log(`Listing all versions of prompt: ${promptName}`)
     console.log(`Using service URL: ${url}`)
-    // TODO: Implement listing of prompt versions
+    
+    try {
+      accessToken = await getAccessToken(url)
+      
+      const response = await axios.get(`${url}/prompts/${promptName}/versions`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'cf-access-token': accessToken
+        }
+      })
+      const versions = response.data
+      
+      if (Array.isArray(versions) && versions.length > 0) {
+        console.log(asTable(versions))
+      } else {
+        console.log('No versions found for this prompt.')
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error fetching prompt versions:', error.message)
+        if (error.response) {
+          console.error('Response status:', error.response.status)
+          console.error('Response data:', error.response.data)
+        }
+      } else if (error instanceof Error) {
+        console.error('Error fetching prompt versions:', error.message)
+      } else {
+        console.error('An unknown error occurred while fetching prompt versions')
+      }
+    }
   })
 
 program
