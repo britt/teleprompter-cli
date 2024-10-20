@@ -188,4 +188,39 @@ program
     // TODO: Implement rollback functionality
   })
 
+program
+  .command('get <promptId>')
+  .description('Fetch a prompt by ID')
+  .option('-u, --url <url>', 'URL of the teleprompter service')
+  .action(async (promptId: string, options) => {
+    const url = checkUrl(options.url || process.env.TP_URL)
+    console.log(`Fetching prompt with ID: ${promptId}`)
+    console.log(`Using service URL: ${url}`)
+
+    try {
+      accessToken = await getAccessToken(url)
+
+      const response = await axios.get(`${url}/prompts/${promptId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'cf-access-token': accessToken
+        }
+      })
+      console.log('Prompt details:')
+      console.log(JSON.stringify(response.data, null, 2))
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error fetching prompt:', error.message)
+        if (error.response) {
+          console.error('Response status:', error.response.status)
+          console.error('Response data:', error.response.data)
+        }
+      } else if (error instanceof Error) {
+        console.error('Error fetching prompt:', error.message)
+      } else {
+        console.error('An unknown error occurred while fetching the prompt')
+      }
+    }
+  })
+
 program.parse(process.argv)
