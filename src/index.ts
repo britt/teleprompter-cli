@@ -15,15 +15,22 @@ const execAsync = promisify(exec)
 
 async function cloudflareAccessLogin(url: string): Promise<string> {
   try {
+    console.log('logging in with Cloudflare Access...')
     const { stdout } = await execAsync(`cloudflared access login ${url}`)
     const lines = stdout.split('\n')
-    const tokenLine = lines.find(line => line.startsWith('Successfully fetched your token:'))
-    if (!tokenLine) {
-      throw new Error('Token not found in cloudflared output')
+    let foundTokenLine = false
+    for (const line of lines) {
+      if (foundTokenLine && line.trim() !== '') {
+        const token = line.trim()
+        accessToken = token
+        return token
+      }
+
+      if (line.startsWith('Successfully fetched your token:')) {
+        foundTokenLine = true
+      }
     }
-    const token = tokenLine.split(':')[1].trim()
-    accessToken = token
-    return token
+    throw new Error('Failed to fetch token from Cloudflare Access')
   } catch (error) {
     console.error('Error logging in with Cloudflare Access:', error)
     process.exit(1)
@@ -37,7 +44,7 @@ async function getAccessToken(url: string): Promise<string> {
     return DEFAULT_LOCAL_TOKEN
   }
 
-  return accessToken || await cloudflareAccessLogin(url)
+  return await cloudflareAccessLogin(url)
 }
 
 const program = new Command()
