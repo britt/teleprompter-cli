@@ -38,7 +38,11 @@ program
         console.log('No active prompts found.')
       }
     } catch (error) {
-      console.error('Error fetching prompts:', error.message)
+      if (error instanceof Error) {
+        console.error('Error fetching prompts:', error.message)
+      } else {
+        console.error('An unknown error occurred while fetching prompts')
+      }
     }
   })
 
