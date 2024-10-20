@@ -12,7 +12,7 @@
     "docs": "typedoc --out docs src"
   },
   "keywords": [],
-  "author": "",
+  "author": "Britt Crawford <britt.v.crawford@gmail.com>",
   "license": "MIT",
   "description": "",
   "devDependencies": {
