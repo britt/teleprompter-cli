@@ -187,11 +187,41 @@ program
   .command('rollback <promptName> <version>')
   .description('Restore a specific version of a prompt')
   .option('-u, --url <url>', 'URL of the teleprompter service')
-  .action((promptName: string, version: string, options) => {
+  .action(async (promptName: string, version: string, options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
     console.log(`Rolling back prompt ${promptName} to version ${version}`)
     console.log(`Using service URL: ${url}`)
-    // TODO: Implement rollback functionality
+    
+    try {
+      accessToken = await getAccessToken(url)
+      
+      const response = await axios.post(`${url}/prompts/${promptName}/rollback`, 
+        { version },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'cf-access-token': accessToken
+          }
+        }
+      )
+      
+      console.log(`Successfully rolled back prompt ${promptName} to version ${version}`)
+      console.log('New prompt details:')
+      console.log(response.data)
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('Error rolling back prompt:', error.message)
+        if (error.response) {
+          console.error('Response status:', error.response.status)
+          console.error('Response data:', error.response.data)
+        }
+      } else if (error instanceof Error) {
+        console.error('Error rolling back prompt:', error.message)
+      } else {
+        console.error('An unknown error occurred while rolling back the prompt')
+      }
+    }
   })
 
 program
