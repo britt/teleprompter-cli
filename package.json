@@ -1,6 +1,6 @@
 {
   "name": "teleprompter-cli",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "bin": {
     "tp": "./dist/index.js"
