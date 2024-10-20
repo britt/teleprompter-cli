@@ -206,7 +206,6 @@ program
       )
       
       console.log(`Successfully rolled back prompt ${promptName} to version ${version}`)
-      console.log('New prompt details:')
       console.log(response.data)
     } catch (error) {
       if (axios.isAxiosError(error)) {
