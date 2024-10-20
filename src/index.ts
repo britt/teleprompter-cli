@@ -5,9 +5,30 @@ import axios from 'axios'
 import asTable from 'as-table'
 import * as fs from 'fs'
 import { URL } from 'url'
+import { promisify } from 'util'
+import { exec } from 'child_process'
 
 const DEFAULT_LOCAL_TOKEN = 'local-development-token'
 let accessToken: string | null = null
+
+const execAsync = promisify(exec)
+
+async function cloudflareAccessLogin(url: string): Promise<string> {
+  try {
+    const { stdout } = await execAsync(`cloudflared access login ${url}`)
+    const lines = stdout.split('\n')
+    const tokenLine = lines.find(line => line.startsWith('Successfully fetched your token:'))
+    if (!tokenLine) {
+      throw new Error('Token not found in cloudflared output')
+    }
+    const token = tokenLine.split(':')[1].trim()
+    accessToken = token
+    return token
+  } catch (error) {
+    console.error('Error logging in with Cloudflare Access:', error)
+    process.exit(1)
+  }
+}
 
 async function getAccessToken(url: string): Promise<string> {
   const parsedUrl = new URL(url)
@@ -16,10 +37,7 @@ async function getAccessToken(url: string): Promise<string> {
     return DEFAULT_LOCAL_TOKEN
   }
 
-  // For non-localhost URLs, you might want to implement a different authentication method
-  // or keep the existing Cloudflare Access login. For now, we'll use a placeholder:
-  console.log('Non-localhost URL detected. Implement appropriate authentication here.')
-  return 'placeholder-token-for-non-localhost'
+  return accessToken || await cloudflareAccessLogin(url)
 }
 
 const program = new Command()
