@@ -68,7 +68,7 @@ Contributions to the Teleprompter CLI are welcome! Please feel free to submit pu
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License. The full license text can be found in the [LICENSE](LICENSE) file in the root directory of this repository.
 
 ## Related Projects
 
