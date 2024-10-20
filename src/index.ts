@@ -67,9 +67,13 @@ program
     }
 
     try {
-      const response = await axios.post(`${url}/prompts`, {
+      const response = await axios.post(`${url}/prompts`, JSON.stringify({
         name: promptName,
         text: text
+      }), {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       console.log('Prompt created successfully:', response.data);
     } catch (error) {
