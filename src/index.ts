@@ -15,7 +15,7 @@ const execAsync = promisify(exec)
 
 async function cloudflareAccessLogin(url: string): Promise<string> {
   try {
-    console.log('logging in with Cloudflare Access...')
+    console.log('logging in with Cloudflare Access...\n')
     const { stdout } = await execAsync(`cloudflared access login ${url}`)
     const lines = stdout.split('\n')
     let foundTokenLine = false
@@ -40,7 +40,7 @@ async function cloudflareAccessLogin(url: string): Promise<string> {
 async function getAccessToken(url: string): Promise<string> {
   const parsedUrl = new URL(url)
   if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') {
-    console.log('Using default token for localhost')
+    console.log('Using default token for localhost\n')
     return DEFAULT_LOCAL_TOKEN
   }
 
@@ -73,7 +73,6 @@ program
     
     try {
       accessToken = await getAccessToken(url)
-      
       const response = await axios.get(`${url}/prompts`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -213,8 +212,10 @@ program
           'cf-access-token': accessToken
         }
       })
-      console.log('Prompt details:')
-      console.log(JSON.stringify(response.data, null, 2))
+      console.log('Prompt details:\n\n')
+      console.log('id:', response.data.id)
+      console.log('version:', response.data.version)
+      console.log(response.data.prompt)
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('Error fetching prompt:', error.message)
