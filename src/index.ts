@@ -195,11 +195,10 @@ program
     try {
       accessToken = await getAccessToken(url)
       
-      const response = await axios.post(`${url}/prompts/${promptName}/rollback`, 
-        { version },
+      const response = await axios.post(`${url}/prompts/${promptName}/versions/${version}`, 
+        {},
         {
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
             'cf-access-token': accessToken
           }
