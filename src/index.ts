@@ -109,7 +109,6 @@ program
       console.log('Access token retrieved successfully')
       
       const fullUrl = `${url}/prompts`
-      console.log(`Making GET request to: ${fullUrl}`)
       
       const response = await axios.get(fullUrl, {
         headers: {
@@ -118,7 +117,6 @@ program
         }
       })
       
-      console.log('Response received:', response.status, response.statusText)
       const prompts = response.data
       
       if (Array.isArray(prompts) && prompts.length > 0) {
