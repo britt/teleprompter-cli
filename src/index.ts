@@ -82,7 +82,16 @@ program
       const prompts = response.data
       
       if (Array.isArray(prompts) && prompts.length > 0) {
-        console.log(asTable(prompts))
+        const truncatedPrompts = prompts.map(prompt => {
+          const truncatedPrompt = Object.fromEntries(
+            Object.entries(prompt).map(([key, value]) => [
+              key,
+              typeof value === 'string' && value.length > 50 ? value.substring(0, 47) + '...' : value
+            ])
+          );
+          return truncatedPrompt;
+        });
+        console.log(asTable(truncatedPrompts, { maxTotalWidth: 140 }));
       } else {
         console.log('No active prompts found.')
       }
