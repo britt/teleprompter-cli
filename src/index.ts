@@ -15,14 +15,19 @@ const execAsync = promisify(exec)
 
 async function cloudflareAccessLogin(url: string): Promise<string> {
   try {
-    console.log('logging in with Cloudflare Access...\n')
-    const { stdout } = await execAsync(`cloudflared access login ${url}`)
+    console.log('Logging in with Cloudflare Access...\n')
+    console.log(`URL: ${url}`)
+    const command = `cloudflared access login ${url}`
+    console.log(`Executing command: ${command}`)
+    const { stdout } = await execAsync(command)
+    console.log('Command output:', stdout)
     const lines = stdout.split('\n')
     let foundTokenLine = false
     for (const line of lines) {
       if (foundTokenLine && line.trim() !== '') {
         const token = line.trim()
         accessToken = token
+        console.log('Token successfully retrieved')
         return token
       }
 
@@ -33,6 +38,10 @@ async function cloudflareAccessLogin(url: string): Promise<string> {
     throw new Error('Failed to fetch token from Cloudflare Access')
   } catch (error) {
     console.error('Error logging in with Cloudflare Access:', error)
+    if (error instanceof Error) {
+      console.error('Error details:', error.message)
+      console.error('Stack trace:', error.stack)
+    }
     process.exit(1)
   }
 }
@@ -67,18 +76,25 @@ program
   .description('List all active prompts')
   .option('-u, --url <url>', 'URL of the teleprompter service')
   .action(async (options) => {
-    const url = checkUrl(options.url || process.env.TP_URL)
-    console.log('Listing all active prompts...')
-    console.log(`Using service URL: ${url}`)
-    
     try {
+      const url = checkUrl(options.url || process.env.TP_URL)
+      console.log('Listing all active prompts...')
+      console.log(`Using service URL: ${url}`)
+    
       accessToken = await getAccessToken(url)
-      const response = await axios.get(`${url}/prompts`, {
+      console.log('Access token retrieved successfully')
+      
+      const fullUrl = `${url}/prompts`
+      console.log(`Making GET request to: ${fullUrl}`)
+      
+      const response = await axios.get(fullUrl, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'cf-access-token': accessToken
         }
       })
+      
+      console.log('Response received:', response.status, response.statusText)
       const prompts = response.data
       
       if (Array.isArray(prompts) && prompts.length > 0) {
