@@ -64,11 +64,7 @@ The CLI supports authentication with Cloudflare Access for secure communication 
 
 ## Cloudflare Warp Access Control
 
-Teleprompter uses Cloudflare Warp for access control. The authentication token retrieved from Cloudflare is stored in `$HOME/.teleprompter/token`. If the folder does not exist, it will be created. The token file permissions are set to 0600 to ensure it is private to the owner.
-
-## Note on Authentication
-
-Teleprompter has no authentication system of its own.
+Teleprompter has no authentication system of its own. It uses Cloudflare Warp for access control. The authentication token retrieved from Cloudflare is stored in `$HOME/.teleprompter/token`. The token file permissions are set to 0600 to ensure it is private to the owner.
 
 ## Contributing
 

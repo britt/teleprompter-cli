@@ -21,7 +21,6 @@ async function cloudflareAccessLogin(url: string): Promise<string> {
     console.log('Logging in with Cloudflare Access...\n')
     console.log(`URL: ${url}`)
     const command = `cloudflared access login ${url}`
-    console.log(`Executing command: ${command}`)
     const { stdout } = await execAsync(command)
     const lines = stdout.split('\n')
     let foundTokenLine = false
@@ -29,7 +28,6 @@ async function cloudflareAccessLogin(url: string): Promise<string> {
       if (foundTokenLine && line.trim() !== '') {
         const token = line.trim()
         accessToken = token
-        console.log('Token successfully retrieved')
         await storeToken(token)
         return token
       }
@@ -56,7 +54,6 @@ async function storeToken(token: string): Promise<void> {
   try {
     await fsPromises.mkdir(dirPath, { recursive: true })
     await fsPromises.writeFile(filePath, token, { mode: 0o600 })
-    console.log(`Token stored at ${filePath} with permissions set to 0600`)
   } catch (error) {
     console.error('Error storing token:', error)
     if (error instanceof Error) {
@@ -77,10 +74,8 @@ async function getAccessToken(url: string): Promise<string> {
   const filePath = path.join(os.homedir(), '.teleprompter', 'token')
   try {
     const token = await fsPromises.readFile(filePath, 'utf-8')
-    console.log('Token read from file')
     return token.trim()
   } catch (error) {
-    console.log('Token file not found, fetching new token')
     return await cloudflareAccessLogin(url)
   }
 }
