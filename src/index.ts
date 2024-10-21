@@ -7,6 +7,9 @@ import * as fs from 'fs'
 import { URL } from 'url'
 import { promisify } from 'util'
 import { exec } from 'child_process'
+import * as path from 'path'
+import * as os from 'os'
+import { promises as fsPromises } from 'fs'
 
 const DEFAULT_LOCAL_TOKEN = 'local-development-token'
 let accessToken: string | null = null
@@ -27,6 +30,7 @@ async function cloudflareAccessLogin(url: string): Promise<string> {
         const token = line.trim()
         accessToken = token
         console.log('Token successfully retrieved')
+        await storeToken(token)
         return token
       }
 
@@ -45,6 +49,24 @@ async function cloudflareAccessLogin(url: string): Promise<string> {
   }
 }
 
+async function storeToken(token: string): Promise<void> {
+  const dirPath = path.join(os.homedir(), '.teleprompter')
+  const filePath = path.join(dirPath, 'token')
+
+  try {
+    await fsPromises.mkdir(dirPath, { recursive: true })
+    await fsPromises.writeFile(filePath, token, { mode: 0o600 })
+    console.log(`Token stored at ${filePath} with permissions set to 0600`)
+  } catch (error) {
+    console.error('Error storing token:', error)
+    if (error instanceof Error) {
+      console.error('Error details:', error.message)
+      console.error('Stack trace:', error.stack)
+    }
+    throw new Error('Failed to store token')
+  }
+}
+
 async function getAccessToken(url: string): Promise<string> {
   const parsedUrl = new URL(url)
   if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') {
@@ -52,7 +74,15 @@ async function getAccessToken(url: string): Promise<string> {
     return DEFAULT_LOCAL_TOKEN
   }
 
-  return await cloudflareAccessLogin(url)
+  const filePath = path.join(os.homedir(), '.teleprompter', 'token')
+  try {
+    const token = await fsPromises.readFile(filePath, 'utf-8')
+    console.log('Token read from file')
+    return token.trim()
+  } catch (error) {
+    console.log('Token file not found, fetching new token')
+    return await cloudflareAccessLogin(url)
+  }
 }
 
 const program = new Command()
