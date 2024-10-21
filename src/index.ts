@@ -105,11 +105,8 @@ program
       console.log('Listing all active prompts...')
       console.log(`Using service URL: ${url}`)
     
-      accessToken = await getAccessToken(url)
-      console.log('Access token retrieved successfully')
-      
+      accessToken = await getAccessToken(url)      
       const fullUrl = `${url}/prompts`
-      
       const response = await axios.get(fullUrl, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
