@@ -20,7 +20,6 @@ async function cloudflareAccessLogin(url: string): Promise<string> {
     const command = `cloudflared access login ${url}`
     console.log(`Executing command: ${command}`)
     const { stdout } = await execAsync(command)
-    console.log('Command output:', stdout)
     const lines = stdout.split('\n')
     let foundTokenLine = false
     for (const line of lines) {
