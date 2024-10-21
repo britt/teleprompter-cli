@@ -107,7 +107,8 @@ program
           );
           return truncatedPrompt;
         });
-        console.log(asTable(truncatedPrompts, { maxTotalWidth: 140 }));
+        const configuredAsTable = asTable.configure({ maxTotalWidth: 140 });
+        console.log(configuredAsTable(truncatedPrompts));
       } else {
         console.log('No active prompts found.')
       }
