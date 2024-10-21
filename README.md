@@ -62,6 +62,14 @@ Here are some example commands:
 
 The CLI supports authentication with Cloudflare Access for secure communication with the Teleprompter service. For local development, it uses a default token.
 
+## Cloudflare Warp Access Control
+
+Teleprompter uses Cloudflare Warp for access control. The authentication token retrieved from Cloudflare is stored in `$HOME/.teleprompter/token`. If the folder does not exist, it will be created. The token file permissions are set to 0600 to ensure it is private to the owner.
+
+## Note on Authentication
+
+Teleprompter has no authentication system of its own.
+
 ## Contributing
 
 Contributions to the Teleprompter CLI are welcome! Please feel free to submit pull requests or create issues for bugs and feature requests.
