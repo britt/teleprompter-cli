@@ -93,7 +93,7 @@ function checkUrl(url: string | undefined): string {
 program
   .name('tp')
   .description('Teleprompter: A tool for managing LLM prompts and updating them at runtime')
-  .version('0.1.0')
+  .version('0.2.0')
 
 program
   .command('list')
