@@ -141,10 +141,10 @@ program
   })
 
 program
-  .command('put <promptName> [promptText]')
+  .command('put <promptName> <promptNamespace> [promptText]')
   .description('Create a new version of a prompt')
   .option('-u, --url <url>', 'URL of the teleprompter service')
-  .action(async (promptName: string, promptText: string | undefined, options) => {
+  .action(async (promptName: string, promptNamespace: string, promptText: string | undefined, options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
     console.log(`Creating a new version of prompt: ${promptName}`)
     console.log(`Using service URL: ${url}`)
@@ -162,8 +162,10 @@ program
     try {
       accessToken = await getAccessToken(url)
 
+      // FIXME: detect whent he token is invalid and re-login
       const response = await axios.post(`${url}/prompts`, JSON.stringify({
         id: promptName,
+        namespace: promptNamespace,
         prompt: text
       }), {
         headers: {
@@ -172,7 +174,6 @@ program
           'cf-access-token': accessToken
         }
       });
-      console.log('Prompt created successfully:', response.data);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('Error creating prompt:', error.message);
@@ -288,6 +289,7 @@ program
       console.log('Prompt details:\n\n')
       console.log('id:', response.data.id)
       console.log('version:', response.data.version)
+      console.log('namespace:', response.data.namespace)
       console.log('\n', response.data.prompt.trim())
     } catch (error) {
       if (axios.isAxiosError(error)) {
