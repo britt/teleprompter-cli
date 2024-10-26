@@ -272,11 +272,13 @@ program
   .command('get <promptId>')
   .description('Fetch a prompt by ID')
   .option('-u, --url <url>', 'URL of the teleprompter service')
+  .option('-j, --json', 'return prompt as JSON')
   .action(async (promptId: string, options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
-    console.log(`Fetching prompt with ID: ${promptId}`)
-    console.log(`Using service URL: ${url}`)
-
+    if (!options.json) {
+      console.log(`Fetching prompt with ID: ${promptId}`)
+      console.log(`Using service URL: ${url}`)
+    }
     try {
       accessToken = await getAccessToken(url)
 
@@ -286,11 +288,15 @@ program
           'cf-access-token': accessToken
         }
       })
-      console.log('Prompt details:\n\n')
+      if (options.json) {
+        console.log(JSON.stringify(response.data, null, 2))
+        return
+      }
+      console.log('Prompt details:\n')
       console.log('id:', response.data.id)
       console.log('version:', response.data.version)
-      console.log('namespace:', response.data.namespace)
-      console.log('\n', response.data.prompt.trim())
+      console.log('namespace:', response.data.namespace, '\n')
+      console.log(response.data.prompt.trim())
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('Error fetching prompt:', error.message)
