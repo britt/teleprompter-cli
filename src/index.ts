@@ -369,4 +369,79 @@ program
     }
   })
 
+program
+  .command('export <pattern>')
+  .description('Export prompts matching pattern to JSON files')
+  .option('-u, --url <url>', 'URL of the teleprompter service')
+  .option('-o, --out <directory>', 'Output directory for JSON files', '.')
+  .action(async (pattern: string, options) => {
+    const url = checkUrl(options.url || process.env.TP_URL)
+    const outputDir = options.out
+
+    try {
+      // Ensure output directory exists
+      await fsPromises.mkdir(outputDir, { recursive: true })
+
+      accessToken = await getAccessToken(url)
+      
+      // Get all prompts first
+      const response = await axios.get(`${url}/prompts`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'cf-access-token': accessToken
+        }
+      })
+
+      const prompts = response.data
+      const regexPattern = pattern.replace(/\*/g, '.*')
+      const matcher = new RegExp(`^${regexPattern}$`)
+      
+      const matchingPrompts = prompts.filter((p: any) => matcher.test(p.id))
+      
+      if (matchingPrompts.length === 0) {
+        console.log(`No prompts found matching pattern: ${pattern}`)
+        return
+      }
+
+      console.log(`Found ${matchingPrompts.length} matching prompts`)
+
+      for (const promptInfo of matchingPrompts) {
+        try {
+          // Get full prompt details
+          const detailResponse = await axios.get(`${url}/prompts/${promptInfo.id}`, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'cf-access-token': accessToken
+            }
+          })
+          
+          const prompt = detailResponse.data
+          // Convert prompt ID to snake case filename
+          const filename = prompt.id.replace(/:/g, '_').replace(/([A-Z])/g, '_$1').toLowerCase()
+          const filepath = path.join(outputDir, `${filename}.json`)
+          
+          await fsPromises.writeFile(
+            filepath,
+            JSON.stringify({
+              id: prompt.id,
+              namespace: prompt.namespace,
+              prompt: prompt.prompt
+            }, null, 2)
+          )
+          
+          console.log(`Exported ${prompt.id} to ${filepath}`)
+        } catch (error) {
+          console.error(`Error exporting prompt ${promptInfo.id}:`, error instanceof Error ? error.message : 'Unknown error')
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error during export:', error.message)
+      } else {
+        console.error('An unknown error occurred during export')
+      }
+      process.exit(1)
+    }
+  })
+
 program.parse(process.argv)
