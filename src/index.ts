@@ -312,4 +312,61 @@ program
     }
   })
 
+program
+  .command('import <files...>')
+  .description('Import prompts from JSON files')
+  .option('-u, --url <url>', 'URL of the teleprompter service')
+  .action(async (files: string[], options) => {
+    const url = checkUrl(options.url || process.env.TP_URL)
+    console.log('Importing prompts from files:', files.join(', '))
+    console.log(`Using service URL: ${url}`)
+
+    try {
+      accessToken = await getAccessToken(url)
+
+      for (const file of files) {
+        try {
+          const content = await fsPromises.readFile(file, 'utf-8')
+          const prompts = JSON.parse(content)
+          
+          // Handle both single prompt and array of prompts
+          const promptsArray = Array.isArray(prompts) ? prompts : [prompts]
+          
+          for (const prompt of promptsArray) {
+            if (!prompt.id || !prompt.namespace || !prompt.prompt) {
+              console.error(`Skipping invalid prompt in ${file}: Missing required fields`)
+              continue
+            }
+
+            try {
+              await axios.post(`${url}/prompts`, JSON.stringify({
+                id: prompt.id,
+                namespace: prompt.namespace,
+                prompt: prompt.prompt
+              }), {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${accessToken}`,
+                  'cf-access-token': accessToken
+                }
+              })
+              console.log(`Successfully imported prompt: ${prompt.id}`)
+            } catch (error) {
+              console.error(`Error importing prompt ${prompt.id}:`, error instanceof Error ? error.message : 'Unknown error')
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing file ${file}:`, error instanceof Error ? error.message : 'Unknown error')
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error during import:', error.message)
+      } else {
+        console.error('An unknown error occurred during import')
+      }
+      process.exit(1)
+    }
+  })
+
 program.parse(process.argv)
