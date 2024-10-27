@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander'
+import * as path from 'path'
 import axios from 'axios'
 import asTable from 'as-table'
 import * as fs from 'fs'
