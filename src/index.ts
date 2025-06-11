@@ -90,10 +90,25 @@ function checkUrl(url: string | undefined): string {
   return url
 }
 
+function setLogLevel(verbose: boolean): void {
+  if (verbose) {
+    // Enable debug logging
+    console.debug = console.log
+  } else {
+    // Disable debug logging
+    console.debug = () => {}
+  }
+}
+
 program
   .name('tp')
   .description('Teleprompter: A tool for managing LLM prompts and updating them at runtime')
   .version('0.2.0')
+  .option('-v, --verbose', 'enable verbose logging')
+  .hook('preAction', (thisCommand) => {
+    const verbose = thisCommand.opts().verbose || false
+    setLogLevel(verbose)
+  })
 
 program
   .command('list')
@@ -103,10 +118,12 @@ program
     try {
       const url = checkUrl(options.url || process.env.TP_URL)
       console.log('Listing all active prompts...')
-      console.log(`Using service URL: ${url}`)
+      console.debug(`Using service URL: ${url}`)
     
-      accessToken = await getAccessToken(url)      
+      accessToken = await getAccessToken(url)
+      console.debug(`Using access token: ${accessToken?.substring(0, 10)}...`)
       const fullUrl = `${url}/prompts`
+      console.debug(`Making request to: ${fullUrl}`)
       const response = await axios.get(fullUrl, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -114,9 +131,11 @@ program
         }
       })
       
+      console.debug(`Response status: ${response.status}`)
       const prompts = response.data
       
       if (Array.isArray(prompts) && prompts.length > 0) {
+        console.debug(`Found ${prompts.length} prompts`)
         const truncatedPrompts = prompts.map(prompt => {
           const truncatedPrompt = Object.fromEntries(
             Object.entries(prompt).map(([key, value]) => [
@@ -134,6 +153,7 @@ program
     } catch (error) {
       if (error instanceof Error) {
         console.error('Error fetching prompts:', error.message)
+        console.debug(`Stack trace: ${error.stack}`)
       } else {
         console.error('An unknown error occurred while fetching prompts')
       }
@@ -147,13 +167,15 @@ program
   .action(async (promptName: string, promptNamespace: string, promptText: string | undefined, options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
     console.log(`Creating a new version of prompt: ${promptName}`)
-    console.log(`Using service URL: ${url}`)
+    console.debug(`Using service URL: ${url}`)
 
     let text: string;
     if (promptText) {
       text = promptText.trim();
+      console.debug(`Using provided prompt text (${text.length} characters)`)
     } else if (!process.stdin.isTTY) {
       text = fs.readFileSync(0, 'utf-8').trim(); // Read from stdin
+      console.debug(`Read prompt text from stdin (${text.length} characters)`)
     } else {
       console.error('Error: Prompt text must be provided as an argument or through stdin');
       process.exit(1);
@@ -161,28 +183,38 @@ program
 
     try {
       accessToken = await getAccessToken(url)
+      console.debug(`Using access token: ${accessToken?.substring(0, 10)}...`)
 
-      // FIXME: detect whent he token is invalid and re-login
-      const response = await axios.post(`${url}/prompts`, JSON.stringify({
+      const payload = {
         id: promptName,
         namespace: promptNamespace,
         prompt: text
-      }), {
+      }
+      console.debug(`Request payload: ${JSON.stringify(payload, null, 2)}`)
+
+      // FIXME: Detect when the token is invalid and re-login
+      const response = await axios.post(`${url}/prompts`, JSON.stringify(payload), {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
           'cf-access-token': accessToken
         }
       });
+      
+      console.debug(`Response status: ${response.status}`)
+      console.debug(`Response data: ${JSON.stringify(response.data, null, 2)}`)
+      console.log(`Successfully created prompt: ${promptName}`)
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('Error creating prompt:', error.message);
         if (error.response) {
           console.error('Response status:', error.response.status);
           console.error('Response data:', error.response.data);
+          console.debug(`Full error response: ${JSON.stringify(error.response, null, 2)}`)
         }
       } else if (error instanceof Error) {
         console.error('Error creating prompt:', error.message);
+        console.debug(`Stack trace: ${error.stack}`)
       } else {
         console.error('An unknown error occurred while creating the prompt');
       }
@@ -196,20 +228,26 @@ program
   .action(async (promptName: string, options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
     console.log(`Listing all versions of prompt: ${promptName}`)
-    console.log(`Using service URL: ${url}`)
+    console.debug(`Using service URL: ${url}`)
     
     try {
       accessToken = await getAccessToken(url)
+      console.debug(`Using access token: ${accessToken?.substring(0, 10)}...`)
       
-      const response = await axios.get(`${url}/prompts/${promptName}/versions`, {
+      const requestUrl = `${url}/prompts/${promptName}/versions`
+      console.debug(`Making request to: ${requestUrl}`)
+      const response = await axios.get(requestUrl, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'cf-access-token': accessToken
         }
       })
+      
+      console.debug(`Response status: ${response.status}`)
       const versions = response.data
       
       if (Array.isArray(versions) && versions.length > 0) {
+        console.debug(`Found ${versions.length} versions`)
         console.log(asTable(versions))
       } else {
         console.log('No versions found for this prompt.')
@@ -220,9 +258,11 @@ program
         if (error.response) {
           console.error('Response status:', error.response.status)
           console.error('Response data:', error.response.data)
+          console.debug(`Full error response: ${JSON.stringify(error.response, null, 2)}`)
         }
       } else if (error instanceof Error) {
         console.error('Error fetching prompt versions:', error.message)
+        console.debug(`Stack trace: ${error.stack}`)
       } else {
         console.error('An unknown error occurred while fetching prompt versions')
       }
@@ -236,12 +276,15 @@ program
   .action(async (promptName: string, version: string, options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
     console.log(`Rolling back prompt ${promptName} to version ${version}`)
-    console.log(`Using service URL: ${url}`)
+    console.debug(`Using service URL: ${url}`)
     
     try {
       accessToken = await getAccessToken(url)
+      console.debug(`Using access token: ${accessToken?.substring(0, 10)}...`)
       
-      const response = await axios.post(`${url}/prompts/${promptName}/versions/${version}`, 
+      const requestUrl = `${url}/prompts/${promptName}/versions/${version}`
+      console.debug(`Making request to: ${requestUrl}`)
+      const response = await axios.post(requestUrl, 
         {},
         {
           headers: {
@@ -251,17 +294,20 @@ program
         }
       )
       
+      console.debug(`Response status: ${response.status}`)
+      console.debug(`Response data: ${JSON.stringify(response.data, null, 2)}`)
       console.log(`Successfully rolled back prompt ${promptName} to version ${version}`)
-      console.log(response.data)
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error('Error rolling back prompt:', error.message)
         if (error.response) {
           console.error('Response status:', error.response.status)
           console.error('Response data:', error.response.data)
+          console.debug(`Full error response: ${JSON.stringify(error.response, null, 2)}`)
         }
       } else if (error instanceof Error) {
         console.error('Error rolling back prompt:', error.message)
+        console.debug(`Stack trace: ${error.stack}`)
       } else {
         console.error('An unknown error occurred while rolling back the prompt')
       }
@@ -277,17 +323,22 @@ program
     const url = checkUrl(options.url || process.env.TP_URL)
     if (!options.json) {
       console.log(`Fetching prompt with ID: ${promptId}`)
-      console.log(`Using service URL: ${url}`)
+      console.debug(`Using service URL: ${url}`)
     }
     try {
       accessToken = await getAccessToken(url)
+      console.debug(`Using access token: ${accessToken?.substring(0, 10)}...`)
 
-      const response = await axios.get(`${url}/prompts/${promptId}`, {
+      const requestUrl = `${url}/prompts/${promptId}`
+      console.debug(`Making request to: ${requestUrl}`)
+      const response = await axios.get(requestUrl, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'cf-access-token': accessToken
         }
       })
+      
+      console.debug(`Response status: ${response.status}`)
       if (options.json) {
         console.log(JSON.stringify(response.data, null, 2))
         return
@@ -303,9 +354,11 @@ program
         if (error.response) {
           console.error('Response status:', error.response.status)
           console.error('Response data:', error.response.data)
+          console.debug(`Full error response: ${JSON.stringify(error.response, null, 2)}`)
         }
       } else if (error instanceof Error) {
         console.error('Error fetching prompt:', error.message)
+        console.debug(`Stack trace: ${error.stack}`)
       } else {
         console.error('An unknown error occurred while fetching the prompt')
       }
@@ -319,49 +372,67 @@ program
   .action(async (files: string[], options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
     console.log('Importing prompts from files:', files.join(', '))
-    console.log(`Using service URL: ${url}`)
+    console.debug(`Using service URL: ${url}`)
 
     try {
       accessToken = await getAccessToken(url)
+      console.debug(`Using access token: ${accessToken?.substring(0, 10)}...`)
 
       for (const file of files) {
         try {
+          console.debug(`Processing file: ${file}`)
           const content = await fsPromises.readFile(file, 'utf-8')
+          console.debug(`File content length: ${content.length} characters`)
           const prompts = JSON.parse(content)
           
           // Handle both single prompt and array of prompts
           const promptsArray = Array.isArray(prompts) ? prompts : [prompts]
+          console.debug(`Found ${promptsArray.length} prompts in file`)
           
           for (const prompt of promptsArray) {
             if (!prompt.id || !prompt.namespace || !prompt.prompt) {
               console.error(`Skipping invalid prompt in ${file}: Missing required fields`)
+              console.debug(`Invalid prompt: ${JSON.stringify(prompt, null, 2)}`)
               continue
             }
 
             try {
-              await axios.post(`${url}/prompts`, JSON.stringify({
+              console.debug(`Importing prompt: ${prompt.id}`)
+              const payload = {
                 id: prompt.id,
                 namespace: prompt.namespace,
                 prompt: prompt.prompt
-              }), {
+              }
+              console.debug(`Request payload: ${JSON.stringify(payload, null, 2)}`)
+              
+              const response = await axios.post(`${url}/prompts`, JSON.stringify(payload), {
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${accessToken}`,
                   'cf-access-token': accessToken
                 }
               })
+              
+              console.debug(`Response status: ${response.status}`)
               console.log(`Successfully imported prompt: ${prompt.id}`)
             } catch (error) {
               console.error(`Error importing prompt ${prompt.id}:`, error instanceof Error ? error.message : 'Unknown error')
+              if (error instanceof Error) {
+                console.debug(`Stack trace: ${error.stack}`)
+              }
             }
           }
         } catch (error) {
           console.error(`Error processing file ${file}:`, error instanceof Error ? error.message : 'Unknown error')
+          if (error instanceof Error) {
+            console.debug(`Stack trace: ${error.stack}`)
+          }
         }
       }
     } catch (error) {
       if (error instanceof Error) {
         console.error('Error during import:', error.message)
+        console.debug(`Stack trace: ${error.stack}`)
       } else {
         console.error('An unknown error occurred during import')
       }
@@ -377,24 +448,35 @@ program
   .action(async (pattern: string, options) => {
     const url = checkUrl(options.url || process.env.TP_URL)
     const outputDir = options.out
+    console.debug(`Using service URL: ${url}`)
+    console.debug(`Output directory: ${outputDir}`)
+    console.debug(`Pattern: ${pattern}`)
 
     try {
       // Ensure output directory exists
       await fsPromises.mkdir(outputDir, { recursive: true })
+      console.debug(`Created/verified output directory: ${outputDir}`)
 
       accessToken = await getAccessToken(url)
+      console.debug(`Using access token: ${accessToken?.substring(0, 10)}...`)
       
       // Get all prompts first
-      const response = await axios.get(`${url}/prompts`, {
+      const requestUrl = `${url}/prompts`
+      console.debug(`Making request to: ${requestUrl}`)
+      const response = await axios.get(requestUrl, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'cf-access-token': accessToken
         }
       })
 
+      console.debug(`Response status: ${response.status}`)
       const prompts = response.data
+      console.debug(`Found ${prompts.length} total prompts`)
+      
       const regexPattern = pattern.replace(/\*/g, '.*')
       const matcher = new RegExp(`^${regexPattern}$`)
+      console.debug(`Using regex pattern: ${regexPattern}`)
       
       const matchingPrompts = prompts.filter((p: any) => matcher.test(p.id))
       
@@ -404,39 +486,51 @@ program
       }
 
       console.log(`Found ${matchingPrompts.length} matching prompts`)
+      console.debug(`Matching prompt IDs: ${matchingPrompts.map((p: any) => p.id).join(', ')}`)
 
       for (const promptInfo of matchingPrompts) {
         try {
+          console.debug(`Exporting prompt: ${promptInfo.id}`)
           // Get full prompt details
-          const detailResponse = await axios.get(`${url}/prompts/${promptInfo.id}`, {
+          const detailUrl = `${url}/prompts/${promptInfo.id}`
+          console.debug(`Making detail request to: ${detailUrl}`)
+          const detailResponse = await axios.get(detailUrl, {
             headers: {
               'Authorization': `Bearer ${accessToken}`,
               'cf-access-token': accessToken
             }
           })
           
+          console.debug(`Detail response status: ${detailResponse.status}`)
           const prompt = detailResponse.data
           // Convert prompt ID to snake case filename
           const filename = prompt.id.replace(/:/g, '_').replace(/([A-Z])/g, '_$1').toLowerCase()
           const filepath = path.join(outputDir, `${filename}.json`)
+          console.debug(`Writing to file: ${filepath}`)
+          
+          const exportData = {
+            id: prompt.id,
+            namespace: prompt.namespace,
+            prompt: prompt.prompt
+          }
           
           await fsPromises.writeFile(
             filepath,
-            JSON.stringify({
-              id: prompt.id,
-              namespace: prompt.namespace,
-              prompt: prompt.prompt
-            }, null, 2)
+            JSON.stringify(exportData, null, 2)
           )
           
           console.log(`Exported ${prompt.id} to ${filepath}`)
         } catch (error) {
           console.error(`Error exporting prompt ${promptInfo.id}:`, error instanceof Error ? error.message : 'Unknown error')
+          if (error instanceof Error) {
+            console.debug(`Stack trace: ${error.stack}`)
+          }
         }
       }
     } catch (error) {
       if (error instanceof Error) {
         console.error('Error during export:', error.message)
+        console.debug(`Stack trace: ${error.stack}`)
       } else {
         console.error('An unknown error occurred during export')
       }
