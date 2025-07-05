@@ -6,10 +6,13 @@
     "jsx": "react",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "allowJs": true,
+    "allowJs": false,
     "moduleResolution": "node16",
-    "module": "Node16"
+    "module": "Node16",
+    "paths": {
+      "../dist/index.js": ["types/dist-index.d.ts"]
+    }
   },
-  "include": ["ink-cli", "types"],
-  "exclude": ["ink-cli/__tests__"]
+  "include": ["ink-cli/**/*", "types/**/*"],
+  "exclude": ["ink-cli/__tests__", "dist", "dist-ink", "src"]
 }
