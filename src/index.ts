@@ -80,7 +80,7 @@ async function getAccessToken(url: string): Promise<string> {
   }
 }
 
-const program = new Command()
+export const program = new Command()
 
 function checkUrl(url: string | undefined): string {
   if (!url) {
@@ -538,4 +538,8 @@ program
     }
   })
 
-program.parse(process.argv)
+if (require.main === module) {
+  program.parse(process.argv)
+}
+
+export default program

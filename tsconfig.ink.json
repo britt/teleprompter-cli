@@ -1,11 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./ink-cli",
+    "rootDir": "./",
     "outDir": "./dist-ink",
     "jsx": "react",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "allowJs": true,
     "moduleResolution": "node16",
     "module": "Node16"
   },

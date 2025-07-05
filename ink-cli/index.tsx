@@ -2,9 +2,10 @@
 import React, {useState, useEffect} from 'react';
 import * as ink from 'ink';
 const {render, Text} = ink;
-import {Command} from 'commander';
 import axios from 'axios';
 import asTable from 'as-table';
+import program from '../dist/index.js';
+import type { Command } from 'commander';
 
 interface ListProps {
   url: string;
@@ -42,17 +43,13 @@ export const List: React.FC<ListProps> = ({url}) => {
   return <Text>{"\n" + table}</Text>;
 };
 
-const program = new Command();
-
 program
   .name('tp-ink')
   .description('Teleprompter CLI (Ink version)');
 
-program
-  .command('list')
-  .description('List all active prompts')
-  .option('-u, --url <url>', 'URL of the teleprompter service')
-  .action((options) => {
+const listCmd = program.commands.find((c: Command) => c.name() === 'list');
+if (listCmd) {
+  listCmd.action((options: any) => {
     const url = options.url || process.env.TP_URL;
     if (!url) {
       console.error('Error: --url option or TP_URL environment variable must be set');
@@ -60,6 +57,7 @@ program
     }
     render(<List url={url}/>);
   });
+}
 
 if (require.main === module) {
   program.parse(process.argv);

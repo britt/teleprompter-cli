@@ -2,9 +2,13 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "jsx": "react",
-    "module": "esnext",
+    "module": "NodeNext",
     "moduleResolution": "node16",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    "rootDir": "./"
   }
+,
+  "include": ["src", "ink-cli", "types"]
 }
