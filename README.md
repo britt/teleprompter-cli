@@ -23,6 +23,20 @@ To install the Teleprompter CLI, follow these steps:
 3. Run `npm install` to install dependencies
 4. Run `npm link` to make the `tp` command available globally
 
+## Building
+
+After installing dependencies you can build the default CLI with:
+
+```
+npm run build
+```
+
+The Ink-based version is built separately:
+
+```
+npm run build:ink
+```
+
 ## Usage
 
 The general syntax for using the Teleprompter CLI is:
