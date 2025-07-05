@@ -4,8 +4,16 @@ import * as ink from 'ink';
 const {render, Text} = ink;
 import axios from 'axios';
 import asTable from 'as-table';
-import program from '../dist/index.js';
-import type { Command } from 'commander';
+import baseProgram from '../dist/index.js';
+import {Command} from 'commander';
+
+export const program = new Command();
+program
+  .name('tp-ink')
+  .description('Teleprompter CLI (Ink version)');
+
+// copy all commands from the default CLI so they behave the same
+baseProgram.commands.forEach(cmd => program.addCommand(cmd));
 
 interface ListProps {
   url: string;
@@ -42,10 +50,6 @@ export const List: React.FC<ListProps> = ({url}) => {
   const table = asTable(prompts.map(p => ({id: p.id, namespace: p.namespace})));
   return <Text>{"\n" + table}</Text>;
 };
-
-program
-  .name('tp-ink')
-  .description('Teleprompter CLI (Ink version)');
 
 const listCmd = program.commands.find((c: Command) => c.name() === 'list');
 if (listCmd) {
