@@ -1,16 +1,14 @@
 {
-  "extends": "./tsconfig.json",
+	"extends": "@sindresorhus/tsconfig",
   "compilerOptions": {
     "rootDir": "./",
-    "outDir": "./dist-ink",
+    "outDir": "./dist-ink-cli",
     "jsx": "react",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "allowJs": false,
-    "moduleResolution": "node16",
-    "module": "Node16",
     "paths": {
-      "../dist/index.js": ["types/dist-index.d.ts"]
+      "../dist/index.js": ["./types/dist-index.d.ts"]
     }
   },
   "include": ["ink-cli/**/*", "types/**/*"],
