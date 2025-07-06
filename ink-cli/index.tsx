@@ -9,7 +9,7 @@ let baseProgram: Command;
 try {
   baseProgram = require(path.join(__dirname, '../../dist/index.js')).default as Command;
 } catch {
-  baseProgram = require(path.join(__dirname, '../src/index')).program as Command;
+  baseProgram = require(path.join(process.cwd(), 'src/index')).program as Command;
 }
 
 export const program = new Command();
