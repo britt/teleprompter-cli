@@ -1,7 +1,56 @@
+import React from 'react';
 import {Command} from 'commander';
 import {checkUrl, getAccessToken} from '../util.js';
 import axios from 'axios';
-import asTable from 'as-table';
+import {Box, render, Text} from 'ink';
+
+const StyledBox = React.forwardRef<any, any>((props, ref) => (
+	<Box {...props} ref={ref} />
+));
+
+const Row = React.forwardRef<any, {id: string; prompt: string; version: string; namespace: string, textColor?: string} & React.ComponentProps<typeof StyledBox>>(({id, prompt, version, namespace, textColor, ...props}, ref) => (
+	<StyledBox {...props} ref={ref} flexDirection="row" spacing={1}>
+		<StyledBox width="30%">
+			<Text color={textColor || 'blue'}>{id}</Text>
+		</StyledBox>
+		<StyledBox width="35%">
+			<Text color={textColor || ''}>{prompt}</Text>
+		</StyledBox>
+		<StyledBox width="20%">
+			<Text color={textColor || 'red'}>{version}</Text>
+		</StyledBox>
+		<StyledBox width="15%">
+			<Text color={textColor || 'blue'}>{namespace}</Text>
+		</StyledBox>
+	</StyledBox>
+));
+
+const Header = (<Row 
+    id="id" 
+    prompt="prompt" 
+    version="version" 
+    namespace="namespace" 
+    borderBottom
+    borderTop={false}
+    borderLeft={false}
+    borderRight={false}
+    borderStyle="single"
+    borderColor="greenBright"
+    key="header"
+    textColor="greenBright"
+    marginBottom={0}
+    />);
+
+function List({prompts}: {prompts: any[]}) {
+	return (
+		<StyledBox flexDirection="column" width="100%">
+			{Header}
+			{prompts.map(prompt => (
+				<Row key={prompt.id} {...prompt} />
+			))}
+		</StyledBox>
+	);
+}
 
 export default function AddListCommand(program: Command) {
 	program
@@ -36,15 +85,14 @@ export default function AddListCommand(program: Command) {
 						const truncatedPrompt = Object.fromEntries(
 							Object.entries(prompt).map(([key, value]) => [
 								key,
-								typeof value === 'string' && value.length > 50
-									? value.substring(0, 47) + '...'
+								typeof value === 'string' && value.length > 43
+									? value.substring(0, 40).replace(/\n/g, ' ') + '...'
 									: value,
 							]),
 						);
 						return truncatedPrompt;
 					});
-					const configuredAsTable = asTable.configure({maxTotalWidth: 140});
-					console.log(configuredAsTable(truncatedPrompts));
+					render(<List prompts={truncatedPrompts} />);
 				} else {
 					console.log('No active prompts found.');
 				}
