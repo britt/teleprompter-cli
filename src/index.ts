@@ -64,7 +64,7 @@ async function storeToken(token: string): Promise<void> {
   }
 }
 
-async function getAccessToken(url: string): Promise<string> {
+export async function getAccessToken(url: string): Promise<string> {
   const parsedUrl = new URL(url)
   if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') {
     console.log('Using default token for localhost\n')
