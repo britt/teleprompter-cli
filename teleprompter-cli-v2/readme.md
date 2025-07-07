@@ -2,6 +2,19 @@
 
 This is a command-line interface (CLI) tool designed to work with the [Teleprompter](https://github.com/britt/teleprompter) project. It provides a convenient way to interact with the Teleprompter service, allowing you to manage LLM prompts and update them at runtime.
 
+## Install
+
+```bash
+# Using npm
+$ npm install --global teleprompter-cli
+
+# Using yarn
+$ yarn global add teleprompter-cli
+
+# Using bun
+$ bun install --global teleprompter-cli
+```
+
 ## Overview
 
 The Teleprompter CLI is built to complement the Teleprompter service, which is a system for managing and versioning prompts for large language models (LLMs). This CLI tool enables users to perform various operations on prompts, such as listing, creating, updating, and rolling back versions, all from the command line.
@@ -28,13 +41,13 @@ To install the Teleprompter CLI, follow these steps:
 After installing dependencies you can build the default CLI with:
 
 ```
-npm run build
+bun run build
 ```
 
 The Ink-based version is built separately:
 
 ```
-npm run build:ink
+bun run build:ink
 ```
 
 ## Usage
@@ -91,3 +104,4 @@ This project is licensed under the MIT License. The full license text can be fou
 ## Related Projects
 
 - [Teleprompter Service](https://github.com/britt/teleprompter): The backend service that this CLI interacts with.
+
