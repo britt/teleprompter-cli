@@ -64,20 +64,44 @@ async function storeToken(token: string): Promise<void> {
   }
 }
 
-export async function getAccessToken(url: string): Promise<string> {
+function isTokenValid(token: string): boolean {
+  try {
+    const [, payload] = token.split('.')
+    if (!payload) {
+      return false
+    }
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
+    const exp = typeof data.exp === 'number' ? data.exp : parseInt(data.exp, 10)
+    return !isNaN(exp) && exp * 1000 > Date.now()
+  } catch {
+    return false
+  }
+}
+
+async function getAccessToken(url: string): Promise<string> {
   const parsedUrl = new URL(url)
   if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') {
     console.log('Using default token for localhost\n')
     return DEFAULT_LOCAL_TOKEN
   }
 
+  if (accessToken && isTokenValid(accessToken)) {
+    return accessToken
+  }
+
   const filePath = path.join(os.homedir(), '.teleprompter', 'token')
   try {
     const token = await fsPromises.readFile(filePath, 'utf-8')
-    return token.trim()
-  } catch (error) {
-    return await cloudflareAccessLogin(url)
-  }
+    const trimmed = token.trim()
+    if (isTokenValid(trimmed)) {
+      accessToken = trimmed
+      return trimmed
+    }
+  } catch {}
+
+  const newToken = await cloudflareAccessLogin(url)
+  accessToken = newToken
+  return newToken
 }
 
 export const program = new Command()
@@ -192,7 +216,6 @@ program
       }
       console.debug(`Request payload: ${JSON.stringify(payload, null, 2)}`)
 
-      // FIXME: Detect when the token is invalid and re-login
       const response = await axios.post(`${url}/prompts`, JSON.stringify(payload), {
         headers: {
           'Content-Type': 'application/json',
