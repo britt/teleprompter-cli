@@ -89,13 +89,15 @@ jobs:
 
           # Create/update installer.json with current version
           mkdir -p .doc.holiday
-          echo "{
-  \"platform\": \"github\",
-  \"version\": \"${{ github.sha }}\",
-  \"workflow_version\": \"$ACTION_VERSION\",
-  \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\",
-  \"trigger\": \"${{ github.event_name }}\"
-}" > .doc.holiday/installer.json
+          cat > .doc.holiday/installer.json <<EOF
+          {
+            "platform": "github",
+            "version": "${{ github.sha }}",
+            "workflow_version": "$ACTION_VERSION",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)",
+            "trigger": "${{ github.event_name }}"
+          }
+          EOF
 
           echo "Updated installer.json with workflow version info"
 
