@@ -15,4 +15,7 @@
       ]
     }
   }
+,
+  "include": ["src", "types"],
+  "exclude": ["ink-cli", "src/__tests__"]
 }

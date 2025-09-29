@@ -6,7 +6,9 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
+    "build:ink": "tsc -p tsconfig.ink.json",
     "start": "node dist/index.js",
+    "start:ink": "node dist-ink/ink-cli/index.js",
     "docs": "typedoc --out docs src"
   },
   "keywords": [],
@@ -18,8 +20,12 @@
     "url": "https://github.com/britt/teleprompter-cli.git"
   },
   "devDependencies": {
+    "@babel/preset-react": "^7.27.1",
+    "@sindresorhus/tsconfig": "^7.0.0",
     "@types/jest": "^29.5.13",
     "@types/node": "^22.7.6",
+    "@types/react": "^19.0.0",
+    "ink-testing-library": "^4.0.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "typedoc": "^0.26.10",
@@ -28,6 +34,8 @@
   "dependencies": {
     "as-table": "^1.0.55",
     "axios": "^1.7.7",
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "ink": "^6.0.1",
+    "react": "^19.1.0"
   }
 }
