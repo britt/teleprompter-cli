@@ -1,0 +1,15 @@
+Cargo.lock
+Cargo.toml
+Gemfile
+Gemfile.lock
+package-lock.json
+package.json
+pnpm-lock.yaml
+pyproject.toml
+requirements.txt
+setup.py
+tsconfig.json
+typedoc.config.js
+typedoc.config.ts
+typedoc.json
+yarn.lock

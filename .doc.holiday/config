@@ -1,0 +1,26 @@
+Publishing = "TypeDoc"
+Includes = [
+  "!**/.git/**",
+  "!**/build/**",
+  "!**/dist/**",
+  "!**/node_modules/**",
+  "!docs/**/*.html",
+  "!typedocs/**",
+  "**/*.md",
+  "**/*.rst",
+  "**/*.ts",
+  "**/*.tsx",
+  "**/*.txt",
+  "**/CHANGELOG*",
+  "**/CONTRIBUTING*",
+  "**/LICENSE*",
+  "**/README*",
+  "typedoc.config.js",
+  "typedoc.json"
+]
+DocumentationRoot = "."
+
+[DocumentationRootEvidence]
+method = "repo-root"
+docFiles = 3
+candidates = [ "teleprompter-cli-v2" ]
