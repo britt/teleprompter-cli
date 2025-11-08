@@ -701,7 +701,9 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
       <Box flexDirection="column">
         <Text color="red" bold>Error:</Text>
         <Text color="red">{error}</Text>
-        <Text color="gray" dimColor marginTop={1}>Press 'q' to quit</Text>
+        <Box marginTop={1}>
+          <Text color="gray" dimColor>Press 'q' to quit</Text>
+        </Box>
       </Box>
     )
   }
@@ -710,7 +712,9 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
     return (
       <Box flexDirection="column">
         <Text color="yellow">No active prompts found.</Text>
-        <Text color="gray" dimColor marginTop={1}>Press 'q' to quit</Text>
+        <Box marginTop={1}>
+          <Text color="gray" dimColor>Press 'q' to quit</Text>
+        </Box>
       </Box>
     )
   }

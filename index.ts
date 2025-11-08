@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { Command } from 'commander'
 import React, { useState } from 'react'
@@ -719,9 +719,7 @@ program.action(async () => {
   await runListCommand(url, verbose)
 })
 
-// Only parse if this is the main module
-if (import.meta.main) {
-  program.parse(process.argv)
-}
+// Parse command line arguments
+program.parse(process.argv)
 
 export default program
