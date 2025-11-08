@@ -174,7 +174,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
         </Box>
 
         {/* Separator */}
-        <Box marginBottom={1}>
+        <Box>
           <Text color="gray">{'─'.repeat(terminalWidth)}</Text>
         </Box>
       </Box>
