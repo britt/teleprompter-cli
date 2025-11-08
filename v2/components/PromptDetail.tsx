@@ -26,9 +26,10 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
   const { stdout } = useStdout()
 
   // Calculate visible lines based on terminal height
-  // Reserve space for: title (1), metadata (4-5 lines), separator (1), "Prompt:" label (1), footer (2)
+  // Reserve conservative amount for UI chrome to fit on screen
+  // Based on testing: need to reserve more than expected due to margins/spacing
   const terminalHeight = stdout?.rows || 24
-  const visibleLines = Math.max(5, terminalHeight - 10)
+  const visibleLines = Math.max(3, terminalHeight - 21)
 
   useEffect(() => {
     async function fetchPromptDetail() {
