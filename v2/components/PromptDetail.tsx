@@ -6,6 +6,14 @@ import { Prompt } from './PromptsList.js'
 import * as path from 'path'
 import { promises as fsPromises } from 'fs'
 
+interface PromptVersion {
+  id: string
+  namespace: string
+  version: number
+  created_at?: string
+  prompt?: string
+}
+
 interface PromptDetailProps {
   promptId: string
   url: string
@@ -28,6 +36,11 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
   const [exportMessage, setExportMessage] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [exportPath, setExportPath] = useState('')
+  const [view, setView] = useState<'detail' | 'versions' | 'rollback'>('detail')
+  const [versions, setVersions] = useState<PromptVersion[] | null>(null)
+  const [versionsLoading, setVersionsLoading] = useState(false)
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState(0)
+  const [rollbackMessage, setRollbackMessage] = useState<string | null>(null)
   const { exit } = useApp()
   const { stdout } = useStdout()
 
@@ -82,8 +95,8 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
 
   // Handle keyboard input
   useInput((input, key) => {
-    // Don't handle normal navigation when exporting
-    if (isExporting) {
+    // Don't handle normal navigation when exporting or in other views
+    if (isExporting || view !== 'detail') {
       return
     }
 
@@ -106,6 +119,18 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       return
     }
 
+    if (input === 'v' || input === 'V') {
+      setView('versions')
+      fetchVersions()
+      return
+    }
+
+    if (input === 'r' || input === 'R') {
+      setView('rollback')
+      fetchVersions()
+      return
+    }
+
     if (!prompt) return
 
     // Get total lines for scrolling calculation
@@ -120,7 +145,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
     if (key.downArrow) {
       setScrollOffset(prev => Math.min(Math.max(0, totalLines - maxVisibleLines), prev + 1))
     }
-  }, { isActive: !isExporting })
+  }, { isActive: !isExporting && view === 'detail' })
 
   // Export prompt to JSON file
   const exportPrompt = async (filepath: string, promptToExport: Prompt) => {
@@ -178,6 +203,255 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       handleExportCancel()
     }
   }, { isActive: isExporting })
+
+  // Fetch versions for the prompt
+  const fetchVersions = async () => {
+    if (!prompt) return
+
+    setVersionsLoading(true)
+    try {
+      if (verbose) {
+        console.log(`Fetching versions for: ${prompt.id}`)
+      }
+
+      const response = await axios.get(`${url}/prompts/${prompt.id}/versions`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'cf-access-token': token
+        }
+      })
+
+      if (verbose) {
+        console.log(`Found ${response.data.length} versions`)
+      }
+
+      setVersions(response.data)
+      setSelectedVersionIndex(0)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      if (verbose) {
+        console.error('Error fetching versions:', errorMessage)
+      }
+      setVersions([])
+    } finally {
+      setVersionsLoading(false)
+    }
+  }
+
+  // Perform rollback to selected version
+  const performRollback = async (version: number) => {
+    if (!prompt) return
+
+    try {
+      if (verbose) {
+        console.log(`Rolling back ${prompt.id} to version ${version}`)
+      }
+
+      const response = await axios.post(
+        `${url}/prompts/${prompt.id}/versions/${version}`,
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'cf-access-token': token
+          }
+        }
+      )
+
+      if (verbose) {
+        console.log(`Rollback successful`)
+      }
+
+      setRollbackMessage(`Rolled back to version ${version}`)
+      setView('detail')
+
+      // Refresh the prompt data
+      const detailResponse = await axios.get(`${url}/prompts/${promptId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'cf-access-token': token
+        }
+      })
+      setPrompt(detailResponse.data)
+
+      // Clear message after 3 seconds
+      setTimeout(() => setRollbackMessage(null), 3000)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setRollbackMessage(`Rollback failed: ${errorMessage}`)
+
+      if (verbose) {
+        console.error('Error during rollback:', errorMessage)
+      }
+
+      // Clear message after 3 seconds
+      setTimeout(() => setRollbackMessage(null), 3000)
+    }
+  }
+
+  // Handle keyboard input for versions view
+  useInput((input, key) => {
+    if (input === 'q') {
+      exit()
+      return
+    }
+
+    if (input === 'b' || input === 'B') {
+      setView('detail')
+      return
+    }
+  }, { isActive: view === 'versions' })
+
+  // Handle keyboard input for rollback view
+  useInput((input, key) => {
+    if (input === 'q') {
+      exit()
+      return
+    }
+
+    if (input === 'b' || input === 'B') {
+      setView('detail')
+      return
+    }
+
+    if (!versions || versions.length === 0) return
+
+    if (key.upArrow) {
+      setSelectedVersionIndex(prev => Math.max(0, prev - 1))
+    }
+
+    if (key.downArrow) {
+      setSelectedVersionIndex(prev => Math.min(versions.length - 1, prev + 1))
+    }
+
+    if (key.return) {
+      const selectedVersion = versions[selectedVersionIndex]
+      if (selectedVersion) {
+        performRollback(selectedVersion.version)
+      }
+    }
+  }, { isActive: view === 'rollback' })
+
+  // Show versions view
+  if (view === 'versions') {
+    if (versionsLoading) {
+      return (
+        <Box flexDirection="column">
+          <Text color="cyan">Loading versions...</Text>
+        </Box>
+      )
+    }
+
+    if (!versions || versions.length === 0) {
+      return (
+        <Box flexDirection="column">
+          <Text color="yellow">No versions found.</Text>
+          <Box marginTop={1}>
+            <Text color="gray" dimColor>Press </Text>
+            <Text color="yellow" bold>b</Text>
+            <Text color="gray" dimColor> to go back or </Text>
+            <Text color="yellow" bold>q</Text>
+            <Text color="gray" dimColor> to quit</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    return (
+      <Box flexDirection="column">
+        <Box marginBottom={1}>
+          <Text color="green" bold>Versions for {prompt?.id}</Text>
+        </Box>
+        <Box marginBottom={1}>
+          <Text color="cyan">Found {versions.length} version{versions.length !== 1 ? 's' : ''}</Text>
+        </Box>
+        <Box flexDirection="column" marginBottom={1}>
+          {versions.map((v) => (
+            <Box key={v.version}>
+              <Text color="yellow">Version {v.version}</Text>
+              <Text color="gray"> - </Text>
+              <Text color="gray">{v.created_at || 'Unknown date'}</Text>
+            </Box>
+          ))}
+        </Box>
+        <Box>
+          <Text color="gray" dimColor>Press </Text>
+          <Text color="yellow" bold>b</Text>
+          <Text color="gray" dimColor> to go back or </Text>
+          <Text color="yellow" bold>q</Text>
+          <Text color="gray" dimColor> to quit</Text>
+        </Box>
+      </Box>
+    )
+  }
+
+  // Show rollback view with version selection
+  if (view === 'rollback') {
+    if (versionsLoading) {
+      return (
+        <Box flexDirection="column">
+          <Text color="cyan">Loading versions...</Text>
+        </Box>
+      )
+    }
+
+    if (!versions || versions.length === 0) {
+      return (
+        <Box flexDirection="column">
+          <Text color="yellow">No versions found.</Text>
+          <Box marginTop={1}>
+            <Text color="gray" dimColor>Press </Text>
+            <Text color="yellow" bold>b</Text>
+            <Text color="gray" dimColor> to go back or </Text>
+            <Text color="yellow" bold>q</Text>
+            <Text color="gray" dimColor> to quit</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    return (
+      <Box flexDirection="column">
+        <Box marginBottom={1}>
+          <Text color="green" bold>Rollback {prompt?.id}</Text>
+        </Box>
+        <Box marginBottom={1}>
+          <Text color="cyan">Select version to rollback to (current: v{prompt?.version})</Text>
+        </Box>
+        <Box flexDirection="column" marginBottom={1}>
+          {versions.map((v, index) => {
+            const isSelected = index === selectedVersionIndex
+            const isCurrent = v.version === prompt?.version
+            return (
+              <Box key={v.version} backgroundColor={isSelected ? 'blue' : undefined}>
+                <Text bold={isSelected} color={isCurrent ? 'green' : 'white'}>
+                  {isCurrent ? '→ ' : '  '}Version {v.version}
+                </Text>
+                <Text bold={isSelected} color={isSelected ? 'white' : 'gray'}> - </Text>
+                <Text bold={isSelected} color={isSelected ? 'white' : 'gray'}>
+                  {v.created_at || 'Unknown date'}
+                </Text>
+                {isCurrent && (
+                  <Text bold color="green"> (current)</Text>
+                )}
+              </Box>
+            )
+          })}
+        </Box>
+        <Box>
+          <Text color="gray" dimColor>Press </Text>
+          <Text color="yellow" bold>↑/↓</Text>
+          <Text color="gray" dimColor> to select, </Text>
+          <Text color="yellow" bold>Enter</Text>
+          <Text color="gray" dimColor> to rollback, </Text>
+          <Text color="yellow" bold>b</Text>
+          <Text color="gray" dimColor> to cancel, </Text>
+          <Text color="yellow" bold>q</Text>
+          <Text color="gray" dimColor> to quit</Text>
+        </Box>
+      </Box>
+    )
+  }
 
   // Show export input interface
   if (isExporting && prompt) {
@@ -319,14 +593,18 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
           <Text color="cyan" dimColor>Press </Text>
           <Text color="yellow" bold>e</Text>
           <Text color="cyan" dimColor> to export, </Text>
+          <Text color="yellow" bold>v</Text>
+          <Text color="cyan" dimColor> for versions, </Text>
+          <Text color="yellow" bold>r</Text>
+          <Text color="cyan" dimColor> to rollback, </Text>
           <Text color="yellow" bold>b</Text>
           <Text color="cyan" dimColor> to go back, </Text>
           <Text color="yellow" bold>q</Text>
           <Text color="cyan" dimColor> to quit</Text>
         </Box>
-        {exportMessage && (
+        {(exportMessage || rollbackMessage) && (
           <Box paddingX={1}>
-            <Text color="green">{exportMessage}</Text>
+            <Text color="green">{exportMessage || rollbackMessage}</Text>
           </Box>
         )}
       </Box>
