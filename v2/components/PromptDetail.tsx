@@ -27,7 +27,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
 
   // Fixed maximum size for prompt display area
   // This avoids issues with word wrapping and dynamic height calculations
-  const maxVisibleLines = 20
+  const maxVisibleLines = 28
 
   // Get terminal width for full-width separators
   const terminalWidth = stdout?.columns || 80
@@ -177,13 +177,10 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
         <Box marginBottom={1}>
           <Text color="gray">{'─'.repeat(terminalWidth)}</Text>
         </Box>
-
-        {/* Prompt label */}
-        <Text bold color="cyan">Prompt:</Text>
       </Box>
 
       {/* Scrollable prompt text section - fixed height */}
-      <Box flexDirection="column" height={maxVisibleLines} paddingLeft={2}>
+      <Box flexDirection="column" height={maxVisibleLines}>
         {visiblePromptLines.map((line, index) => (
           <Text key={scrollOffset + index} color="white">
             {line || ' '}
