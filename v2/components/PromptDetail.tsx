@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Box, Text, useInput, useApp } from 'ink'
+import { Box, Text, useInput, useApp, useStdout } from 'ink'
 import axios from 'axios'
 import { Prompt } from './PromptsList.js'
 
@@ -21,7 +21,14 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
   const [prompt, setPrompt] = useState<Prompt | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [scrollOffset, setScrollOffset] = useState(0)
   const { exit } = useApp()
+  const { stdout } = useStdout()
+
+  // Calculate visible lines based on terminal height
+  // Reserve space for: title (1), metadata (4-5 lines), separator (1), "Prompt:" label (1), footer (2)
+  const terminalHeight = stdout?.rows || 24
+  const visibleLines = Math.max(5, terminalHeight - 10)
 
   useEffect(() => {
     async function fetchPromptDetail() {
@@ -66,6 +73,21 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
     if (input === 'b' || input === 'B') {
       onBack()
       return
+    }
+
+    if (!prompt) return
+
+    // Get total lines for scrolling calculation
+    const promptText = prompt.prompt || ''
+    const normalizedText = promptText.replace(/\\n/g, '\n')
+    const totalLines = normalizedText.split('\n').length
+
+    if (key.upArrow) {
+      setScrollOffset(prev => Math.max(0, prev - 1))
+    }
+
+    if (key.downArrow) {
+      setScrollOffset(prev => Math.min(Math.max(0, totalLines - visibleLines), prev + 1))
     }
   })
 
@@ -114,58 +136,73 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
   const normalizedText = promptText.replace(/\\n/g, '\n') // Replace escaped \n with actual newlines
   const promptLines = normalizedText.split('\n')
 
+  // Get visible lines based on scroll offset
+  const visiblePromptLines = promptLines.slice(scrollOffset, scrollOffset + visibleLines)
+  const totalLines = promptLines.length
+  const canScroll = totalLines > visibleLines
+
   return (
     <Box flexDirection="column" height="100%">
-      {/* Header */}
-      <Box flexDirection="column" marginBottom={1}>
-        <Text color="green" bold>Prompt Details</Text>
-      </Box>
+      {/* Fixed header section - pinned at top */}
+      <Box flexDirection="column">
+        <Box marginBottom={1}>
+          <Text color="green" bold>Prompt Details</Text>
+        </Box>
 
-      {/* Metadata section */}
-      <Box flexDirection="column" marginBottom={1}>
-        <Box>
-          <Text bold color="cyan">ID: </Text>
-          <Text>{prompt.id}</Text>
-        </Box>
-        <Box>
-          <Text bold color="cyan">Namespace: </Text>
-          <Text color="magenta">{prompt.namespace}</Text>
-        </Box>
-        <Box>
-          <Text bold color="cyan">Version: </Text>
-          <Text color="yellow">{prompt.version}</Text>
-        </Box>
-        {prompt.created_at && (
+        {/* Metadata section */}
+        <Box flexDirection="column" marginBottom={1}>
           <Box>
-            <Text bold color="cyan">Created: </Text>
-            <Text color="gray">{prompt.created_at}</Text>
+            <Text bold color="cyan">ID: </Text>
+            <Text>{prompt.id}</Text>
           </Box>
-        )}
-      </Box>
-
-      {/* Separator */}
-      <Box marginBottom={1}>
-        <Text color="gray">{'─'.repeat(80)}</Text>
-      </Box>
-
-      {/* Prompt text section */}
-      <Box flexDirection="column" marginBottom={1}>
-        <Text bold color="cyan">Prompt:</Text>
-        <Box flexDirection="column" marginTop={1} paddingLeft={2}>
-          {promptLines.map((line, index) => (
-            <Text key={index} color="white">
-              {line || ' '}
-            </Text>
-          ))}
+          <Box>
+            <Text bold color="cyan">Namespace: </Text>
+            <Text color="magenta">{prompt.namespace}</Text>
+          </Box>
+          <Box>
+            <Text bold color="cyan">Version: </Text>
+            <Text color="yellow">{prompt.version}</Text>
+          </Box>
+          {prompt.created_at && (
+            <Box>
+              <Text bold color="cyan">Created: </Text>
+              <Text color="gray">{prompt.created_at}</Text>
+            </Box>
+          )}
         </Box>
+
+        {/* Separator */}
+        <Box marginBottom={1}>
+          <Text color="gray">{'─'.repeat(80)}</Text>
+        </Box>
+
+        {/* Prompt label */}
+        <Text bold color="cyan">Prompt:</Text>
       </Box>
 
-      {/* Footer */}
-      <Box flexDirection="column" marginTop={1}>
+      {/* Scrollable prompt text section - fills available space */}
+      <Box flexDirection="column" flexGrow={1} paddingLeft={2}>
+        {visiblePromptLines.map((line, index) => (
+          <Text key={scrollOffset + index} color="white">
+            {line || ' '}
+          </Text>
+        ))}
+      </Box>
+
+      {/* Fixed footer - pinned at bottom */}
+      <Box flexDirection="column">
         <Box>
           <Text color="gray">{'─'.repeat(80)}</Text>
         </Box>
         <Box paddingX={1}>
+          {canScroll && (
+            <>
+              <Text color="gray" dimColor>
+                Showing lines {scrollOffset + 1}-{Math.min(scrollOffset + visibleLines, totalLines)} of {totalLines} •
+              </Text>
+              <Text color="gray" dimColor> </Text>
+            </>
+          )}
           <Text color="cyan" dimColor>Press </Text>
           <Text color="yellow" bold>b</Text>
           <Text color="cyan" dimColor> to go back or </Text>
