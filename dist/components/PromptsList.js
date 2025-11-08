@@ -11,6 +11,8 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
     const [loading, setLoading] = useState(true);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollOffset, setScrollOffset] = useState(0);
+    const [isFiltering, setIsFiltering] = useState(false);
+    const [filterText, setFilterText] = useState('');
     const [isExporting, setIsExporting] = useState(false);
     const [exportStep, setExportStep] = useState('pattern');
     const [exportPattern, setExportPattern] = useState('*');
@@ -79,12 +81,23 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
     }, [url, token, verbose]);
     // Handle keyboard input
     useInput((input, key) => {
-        // Don't handle normal navigation when exporting or in other views
-        if (isExporting || view !== 'list') {
+        // Don't handle normal navigation when exporting, filtering, or in other views
+        if (isExporting || isFiltering || view !== 'list') {
             return;
         }
         if (input === 'q') {
             exit();
+            return;
+        }
+        if (key.escape && filterText) {
+            // Clear filter with ESC
+            setFilterText('');
+            setSelectedIndex(0);
+            setScrollOffset(0);
+            return;
+        }
+        if (input === 'f' || input === 'F') {
+            setIsFiltering(true);
             return;
         }
         if (input === 'e' || input === 'E') {
@@ -143,7 +156,7 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
                 return newIndex;
             });
         }
-    }, { isActive: !isExporting && view === 'list' });
+    }, { isActive: !isExporting && !isFiltering && view === 'list' });
     // Handle pattern submission
     const handlePatternSubmit = () => {
         setExportStep('path');
@@ -162,6 +175,25 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
             handleExportCancel();
         }
     }, { isActive: isExporting });
+    // Handle filter submit
+    const handleFilterSubmit = () => {
+        setIsFiltering(false);
+        setSelectedIndex(0);
+        setScrollOffset(0);
+    };
+    // Handle filter cancel
+    const handleFilterCancel = () => {
+        setIsFiltering(false);
+        setFilterText('');
+        setSelectedIndex(0);
+        setScrollOffset(0);
+    };
+    // Handle keyboard input during filtering
+    useInput((input, key) => {
+        if (key.escape || (key.ctrl && input === 'b')) {
+            handleFilterCancel();
+        }
+    }, { isActive: isFiltering });
     // Fetch versions for a prompt
     const fetchVersions = async (promptId) => {
         setVersionsLoading(true);
@@ -564,8 +596,12 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
         const truncated = singleLine.length > width ? singleLine.substring(0, width - 3) + '...' : singleLine;
         return truncated.padEnd(width, ' ');
     };
+    // Filter prompts based on ID prefix if filtering is active
+    const filteredPrompts = filterText
+        ? prompts.filter(p => p.id.toLowerCase().startsWith(filterText.toLowerCase()))
+        : prompts;
     // Get visible prompts based on scroll offset
-    const visiblePrompts = prompts.slice(scrollOffset, scrollOffset + visibleRows);
+    const visiblePrompts = filteredPrompts.slice(scrollOffset, scrollOffset + visibleRows);
     // Fixed column widths - must be consistent for all rows
     const idWidth = 35;
     const namespaceWidth = 25;
@@ -581,12 +617,30 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
             React.createElement(Text, { bold: isHeader || isSelected, color: isHeader ? 'cyan' : (isSelected ? 'white' : 'yellow') }, padText(String(version), versionWidth))),
         React.createElement(Box, { width: promptWidth },
             React.createElement(Text, { bold: isHeader || isSelected, color: isHeader ? 'cyan' : (isSelected ? 'white' : 'gray') }, padText(String(prompt), promptWidth)))));
+    // Show filter input if filtering
+    if (isFiltering) {
+        return (React.createElement(Box, { flexDirection: "column" },
+            React.createElement(Box, { marginBottom: 1 },
+                React.createElement(Text, { color: "green", bold: true }, "Filter by ID prefix")),
+            React.createElement(Box, { marginBottom: 1 },
+                React.createElement(Text, { color: "cyan" }, "Filter: "),
+                React.createElement(TextInput, { value: filterText, onChange: setFilterText, onSubmit: handleFilterSubmit, placeholder: "e.g., my-c" })),
+            React.createElement(Box, null,
+                React.createElement(Text, { color: "gray", dimColor: true }, "Press "),
+                React.createElement(Text, { color: "yellow", bold: true }, "Enter"),
+                React.createElement(Text, { color: "gray", dimColor: true }, " to apply filter, "),
+                React.createElement(Text, { color: "yellow", bold: true }, "ESC"),
+                React.createElement(Text, { color: "gray", dimColor: true }, " or "),
+                React.createElement(Text, { color: "yellow", bold: true }, "Ctrl+B"),
+                React.createElement(Text, { color: "gray", dimColor: true }, " to cancel"))));
+    }
     return (React.createElement(Box, { flexDirection: "column", height: "100%" },
         React.createElement(Box, { flexDirection: "column" },
             React.createElement(Box, { marginBottom: 1 },
                 React.createElement(Text, { color: "green", bold: true },
                     "Active Prompts (",
-                    prompts.length,
+                    filteredPrompts.length,
+                    filterText ? ` filtered from ${prompts.length}` : '',
                     ") - Use \u2191\u2193 to scroll")),
             React.createElement(TableRow, { id: "ID", namespace: "Namespace", version: "Version", prompt: "Prompt", isHeader: true }),
             React.createElement(Box, null,
@@ -601,6 +655,8 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
                 React.createElement(Text, { color: "gray" }, '─'.repeat(idWidth + namespaceWidth + versionWidth + promptWidth))),
             React.createElement(Box, { paddingX: 1 },
                 React.createElement(Text, { color: "cyan", dimColor: true }, "Press "),
+                React.createElement(Text, { color: "yellow", bold: true }, "f"),
+                React.createElement(Text, { color: "cyan", dimColor: true }, " to filter, "),
                 React.createElement(Text, { color: "yellow", bold: true }, "n"),
                 React.createElement(Text, { color: "cyan", dimColor: true }, " for new, "),
                 React.createElement(Text, { color: "yellow", bold: true }, "e"),
@@ -613,6 +669,15 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
                 React.createElement(Text, { color: "cyan", dimColor: true }, " for details, "),
                 React.createElement(Text, { color: "yellow", bold: true }, "q"),
                 React.createElement(Text, { color: "cyan", dimColor: true }, " to quit")),
+            filterText && (React.createElement(Box, { paddingX: 1 },
+                React.createElement(Text, { color: "magenta" },
+                    "Filter active: \"",
+                    filterText,
+                    "\" - Press "),
+                React.createElement(Text, { color: "yellow", bold: true }, "f"),
+                React.createElement(Text, { color: "magenta" }, " to change or "),
+                React.createElement(Text, { color: "yellow", bold: true }, "ESC"),
+                React.createElement(Text, { color: "magenta" }, " to clear"))),
             (exportMessage || rollbackMessage) && (React.createElement(Box, { paddingX: 1 },
                 React.createElement(Text, { color: "green" }, exportMessage || rollbackMessage))))));
 };
