@@ -23,13 +23,10 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
   const [loading, setLoading] = useState(true)
   const [scrollOffset, setScrollOffset] = useState(0)
   const { exit } = useApp()
-  const { stdout } = useStdout()
 
-  // Calculate visible lines based on terminal height
-  // Reserve conservative amount for UI chrome to fit on screen
-  // Based on testing: need to reserve more than expected due to margins/spacing
-  const terminalHeight = stdout?.rows || 24
-  const visibleLines = Math.max(3, terminalHeight - 21)
+  // Fixed maximum size for prompt display area
+  // This avoids issues with word wrapping and dynamic height calculations
+  const maxVisibleLines = 15
 
   useEffect(() => {
     async function fetchPromptDetail() {
@@ -88,7 +85,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
     }
 
     if (key.downArrow) {
-      setScrollOffset(prev => Math.min(Math.max(0, totalLines - visibleLines), prev + 1))
+      setScrollOffset(prev => Math.min(Math.max(0, totalLines - maxVisibleLines), prev + 1))
     }
   })
 
@@ -138,9 +135,9 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
   const promptLines = normalizedText.split('\n')
 
   // Get visible lines based on scroll offset
-  const visiblePromptLines = promptLines.slice(scrollOffset, scrollOffset + visibleLines)
+  const visiblePromptLines = promptLines.slice(scrollOffset, scrollOffset + maxVisibleLines)
   const totalLines = promptLines.length
-  const canScroll = totalLines > visibleLines
+  const canScroll = totalLines > maxVisibleLines
 
   return (
     <Box flexDirection="column" height="100%">
@@ -181,8 +178,8 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
         <Text bold color="cyan">Prompt:</Text>
       </Box>
 
-      {/* Scrollable prompt text section - fills available space */}
-      <Box flexDirection="column" flexGrow={1} paddingLeft={2}>
+      {/* Scrollable prompt text section - fixed height */}
+      <Box flexDirection="column" height={maxVisibleLines} paddingLeft={2}>
         {visiblePromptLines.map((line, index) => (
           <Text key={scrollOffset + index} color="white">
             {line || ' '}
@@ -199,7 +196,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
           {canScroll && (
             <>
               <Text color="gray" dimColor>
-                Showing lines {scrollOffset + 1}-{Math.min(scrollOffset + visibleLines, totalLines)} of {totalLines} •
+                Showing lines {scrollOffset + 1}-{Math.min(scrollOffset + maxVisibleLines, totalLines)} of {totalLines} •
               </Text>
               <Text color="gray" dimColor> </Text>
             </>
