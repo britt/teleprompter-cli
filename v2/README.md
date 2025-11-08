@@ -27,25 +27,33 @@ bun install
 
 ## Usage
 
-Run the CLI:
+The CLI displays an interactive list of prompts by default:
 
 ```bash
-bun run index.ts list --url <teleprompter-service-url>
+# Using the executable directly
+./index.ts --url <teleprompter-service-url>
+
+# Or with bun
+bun run index.ts --url <teleprompter-service-url>
+
+# Or set TP_URL environment variable
+export TP_URL=<teleprompter-service-url>
+./index.ts
 ```
 
-Or use the executable directly:
+**The list view is the default!** Just run `./index.ts` and you'll see the interactive prompt list.
 
-```bash
-./index.ts list --url <teleprompter-service-url>
-```
+### Interactive List Features
+
+- **Navigation**: Use `↑/↓` arrow keys to scroll through prompts
+- **Quit**: Press `q` to exit
+- **Display**: Shows ID, Namespace, Version, and Prompt text in aligned columns
+- **Selection**: Currently selected row is highlighted in blue
+- **Scroll indicator**: Shows position (e.g., "Showing 1-17 of 25")
 
 ### Commands
 
-- `list` - List all active prompts with an interactive scrollable table
-  - Use `↑/↓` arrow keys to navigate
-  - Press `q` to quit
-  - Displays: ID, Namespace, Version, and Prompt text
-  - Shows scroll position at bottom (e.g., "Showing 1-20 of 25")
+- `list` - Explicitly run the list command (same as default behavior)
 
 ### Options
 
