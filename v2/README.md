@@ -55,10 +55,13 @@ export TP_URL=<teleprompter-service-url>
 
 **Detail View:**
 - **View**: Shows complete prompt information including:
-  - ID, Namespace, Version, Created date
-  - Full prompt text with preserved formatting
+  - ID, Namespace, Version, Created date (pinned at top)
+  - Full prompt text with preserved formatting (scrollable)
+- **Scroll**: Use `↑/↓` arrow keys to scroll through long prompts
+- **Scroll Indicator**: Shows position when prompt is longer than screen (e.g., "Showing lines 1-15 of 42")
 - **Go Back**: Press `b` to return to the list view
 - **Quit**: Press `q` to exit
+- **Layout**: Header pinned at top, footer pinned at bottom, prompt text scrolls in between
 
 ### Commands
 
