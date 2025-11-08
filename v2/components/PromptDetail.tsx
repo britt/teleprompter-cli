@@ -93,6 +93,19 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
     return `./${filename}.json`
   }
 
+  // Convert version timestamp to human-readable date
+  const formatVersionDate = (version: number): string => {
+    const date = new Date(version)
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  }
+
   // Handle keyboard input
   useInput((input, key) => {
     // Don't handle normal navigation when exporting or in other views
@@ -300,6 +313,29 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       setView('detail')
       return
     }
+
+    if (!versions || versions.length === 0) return
+
+    if (key.upArrow) {
+      setSelectedVersionIndex(prev => Math.max(0, prev - 1))
+    }
+
+    if (key.downArrow) {
+      setSelectedVersionIndex(prev => Math.min(versions.length - 1, prev + 1))
+    }
+
+    if (key.return) {
+      const selectedVersion = versions[selectedVersionIndex]
+      if (selectedVersion && selectedVersion.prompt) {
+        // Fetch and display the selected version
+        setPrompt(selectedVersion as Prompt)
+        setView('detail')
+      }
+    }
+
+    if (input === 'r' || input === 'R') {
+      setView('rollback')
+    }
   }, { isActive: view === 'versions' })
 
   // Handle keyboard input for rollback view
@@ -363,21 +399,38 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
           <Text color="green" bold>Versions for {prompt?.id}</Text>
         </Box>
         <Box marginBottom={1}>
-          <Text color="cyan">Found {versions.length} version{versions.length !== 1 ? 's' : ''}</Text>
+          <Text color="cyan">Found {versions.length} version{versions.length !== 1 ? 's' : ''} (current: v{prompt?.version})</Text>
         </Box>
         <Box flexDirection="column" marginBottom={1}>
-          {versions.map((v) => (
-            <Box key={v.version}>
-              <Text color="yellow">Version {v.version}</Text>
-              <Text color="gray"> - </Text>
-              <Text color="gray">{v.created_at || 'Unknown date'}</Text>
-            </Box>
-          ))}
+          {versions.map((v, index) => {
+            const isSelected = index === selectedVersionIndex
+            const isCurrent = v.version === prompt?.version
+            return (
+              <Box key={v.version} backgroundColor={isSelected ? 'blue' : undefined}>
+                <Text bold={isSelected} color={isCurrent ? 'green' : 'white'}>
+                  {isCurrent ? '→ ' : '  '}v{v.version}
+                </Text>
+                <Text bold={isSelected} color={isSelected ? 'white' : 'gray'}> - </Text>
+                <Text bold={isSelected} color={isSelected ? 'white' : 'gray'}>
+                  {formatVersionDate(v.version)}
+                </Text>
+                {isCurrent && (
+                  <Text bold color="green"> (current)</Text>
+                )}
+              </Box>
+            )
+          })}
         </Box>
         <Box>
           <Text color="gray" dimColor>Press </Text>
+          <Text color="yellow" bold>↑/↓</Text>
+          <Text color="gray" dimColor> to select, </Text>
+          <Text color="yellow" bold>Enter</Text>
+          <Text color="gray" dimColor> to view, </Text>
+          <Text color="yellow" bold>r</Text>
+          <Text color="gray" dimColor> to rollback, </Text>
           <Text color="yellow" bold>b</Text>
-          <Text color="gray" dimColor> to go back or </Text>
+          <Text color="gray" dimColor> to go back, </Text>
           <Text color="yellow" bold>q</Text>
           <Text color="gray" dimColor> to quit</Text>
         </Box>
@@ -425,11 +478,11 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
             return (
               <Box key={v.version} backgroundColor={isSelected ? 'blue' : undefined}>
                 <Text bold={isSelected} color={isCurrent ? 'green' : 'white'}>
-                  {isCurrent ? '→ ' : '  '}Version {v.version}
+                  {isCurrent ? '→ ' : '  '}v{v.version}
                 </Text>
                 <Text bold={isSelected} color={isSelected ? 'white' : 'gray'}> - </Text>
                 <Text bold={isSelected} color={isSelected ? 'white' : 'gray'}>
-                  {v.created_at || 'Unknown date'}
+                  {formatVersionDate(v.version)}
                 </Text>
                 {isCurrent && (
                   <Text bold color="green"> (current)</Text>

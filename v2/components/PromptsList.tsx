@@ -59,6 +59,19 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
   const terminalHeight = stdout?.rows || 24
   const visibleRows = Math.max(3, terminalHeight - 7)
 
+  // Convert version timestamp to human-readable date
+  const formatVersionDate = (version: number): string => {
+    const date = new Date(version)
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  }
+
   useEffect(() => {
     async function fetchPrompts() {
       try {
@@ -278,6 +291,28 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
       setView('list')
       return
     }
+
+    if (!versions || versions.length === 0) return
+
+    if (key.upArrow) {
+      setSelectedVersionIndex(prev => Math.max(0, prev - 1))
+    }
+
+    if (key.downArrow) {
+      setSelectedVersionIndex(prev => Math.min(versions.length - 1, prev + 1))
+    }
+
+    if (key.return && onSelectPrompt && currentPromptId) {
+      const selectedVersion = versions[selectedVersionIndex]
+      if (selectedVersion) {
+        // Navigate to detail view of the selected version
+        onSelectPrompt(currentPromptId)
+      }
+    }
+
+    if (input === 'r' || input === 'R') {
+      setView('rollback')
+    }
   }, { isActive: view === 'versions' })
 
   // Handle keyboard input for rollback view
@@ -415,27 +450,46 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
       )
     }
 
+    const currentPrompt = prompts?.find(p => p.id === currentPromptId)
+
     return (
       <Box flexDirection="column">
         <Box marginBottom={1}>
           <Text color="green" bold>Versions for {currentPromptId}</Text>
         </Box>
         <Box marginBottom={1}>
-          <Text color="cyan">Found {versions.length} version{versions.length !== 1 ? 's' : ''}</Text>
+          <Text color="cyan">Found {versions.length} version{versions.length !== 1 ? 's' : ''} (current: v{currentPrompt?.version})</Text>
         </Box>
         <Box flexDirection="column" marginBottom={1}>
-          {versions.map((v) => (
-            <Box key={v.version}>
-              <Text color="yellow">Version {v.version}</Text>
-              <Text color="gray"> - </Text>
-              <Text color="gray">{v.created_at || 'Unknown date'}</Text>
-            </Box>
-          ))}
+          {versions.map((v, index) => {
+            const isSelected = index === selectedVersionIndex
+            const isCurrent = v.version === currentPrompt?.version
+            return (
+              <Box key={v.version} backgroundColor={isSelected ? 'blue' : undefined}>
+                <Text bold={isSelected} color={isCurrent ? 'green' : 'white'}>
+                  {isCurrent ? '→ ' : '  '}v{v.version}
+                </Text>
+                <Text bold={isSelected} color={isSelected ? 'white' : 'gray'}> - </Text>
+                <Text bold={isSelected} color={isSelected ? 'white' : 'gray'}>
+                  {formatVersionDate(v.version)}
+                </Text>
+                {isCurrent && (
+                  <Text bold color="green"> (current)</Text>
+                )}
+              </Box>
+            )
+          })}
         </Box>
         <Box>
           <Text color="gray" dimColor>Press </Text>
+          <Text color="yellow" bold>↑/↓</Text>
+          <Text color="gray" dimColor> to select, </Text>
+          <Text color="yellow" bold>Enter</Text>
+          <Text color="gray" dimColor> to view, </Text>
+          <Text color="yellow" bold>r</Text>
+          <Text color="gray" dimColor> to rollback, </Text>
           <Text color="yellow" bold>b</Text>
-          <Text color="gray" dimColor> to go back or </Text>
+          <Text color="gray" dimColor> to go back, </Text>
           <Text color="yellow" bold>q</Text>
           <Text color="gray" dimColor> to quit</Text>
         </Box>
@@ -485,11 +539,11 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
             return (
               <Box key={v.version} backgroundColor={isSelected ? 'blue' : undefined}>
                 <Text bold={isSelected} color={isCurrent ? 'green' : 'white'}>
-                  {isCurrent ? '→ ' : '  '}Version {v.version}
+                  {isCurrent ? '→ ' : '  '}v{v.version}
                 </Text>
                 <Text bold={isSelected} color={isSelected ? 'white' : 'gray'}> - </Text>
                 <Text bold={isSelected} color={isSelected ? 'white' : 'gray'}>
-                  {v.created_at || 'Unknown date'}
+                  {formatVersionDate(v.version)}
                 </Text>
                 {isCurrent && (
                   <Text bold color="green"> (current)</Text>
