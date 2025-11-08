@@ -23,10 +23,14 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
   const [loading, setLoading] = useState(true)
   const [scrollOffset, setScrollOffset] = useState(0)
   const { exit } = useApp()
+  const { stdout } = useStdout()
 
   // Fixed maximum size for prompt display area
   // This avoids issues with word wrapping and dynamic height calculations
-  const maxVisibleLines = 15
+  const maxVisibleLines = 20
+
+  // Get terminal width for full-width separators
+  const terminalWidth = stdout?.columns || 80
 
   useEffect(() => {
     async function fetchPromptDetail() {
@@ -171,7 +175,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
 
         {/* Separator */}
         <Box marginBottom={1}>
-          <Text color="gray">{'─'.repeat(80)}</Text>
+          <Text color="gray">{'─'.repeat(terminalWidth)}</Text>
         </Box>
 
         {/* Prompt label */}
@@ -190,7 +194,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       {/* Fixed footer - pinned at bottom */}
       <Box flexDirection="column">
         <Box>
-          <Text color="gray">{'─'.repeat(80)}</Text>
+          <Text color="gray">{'─'.repeat(terminalWidth)}</Text>
         </Box>
         <Box paddingX={1}>
           {canScroll && (
