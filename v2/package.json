@@ -16,9 +16,10 @@
   "license": "MIT",
   "description": "Teleprompter CLI v2 - Built with Bun and Ink",
   "devDependencies": {
-    "@types/bun": "latest",
+    "@types/bun": "^1.3.2",
     "@types/node": "^24.10.0",
-    "@types/react": "^19.2.2"
+    "@types/react": "^19.2.2",
+    "ink-testing-library": "^4.0.0"
   },
   "peerDependencies": {
     "typescript": "^5"
