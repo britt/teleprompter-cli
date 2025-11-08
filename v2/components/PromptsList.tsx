@@ -14,9 +14,10 @@ interface PromptsListProps {
   url: string
   token: string
   verbose?: boolean
+  onSelectPrompt?: (promptId: string) => void
 }
 
-export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = false }) => {
+export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = false, onSelectPrompt }) => {
   const [prompts, setPrompts] = useState<Prompt[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -78,6 +79,15 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
     }
 
     if (!prompts) return
+
+    // Handle Enter key to view prompt details
+    if (key.return && onSelectPrompt) {
+      const selectedPrompt = prompts[selectedIndex]
+      if (selectedPrompt) {
+        onSelectPrompt(selectedPrompt.id)
+      }
+      return
+    }
 
     if (key.upArrow) {
       setSelectedIndex(prev => {
@@ -240,6 +250,8 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
         </Box>
         <Box paddingX={1}>
           <Text color="cyan" dimColor>Press </Text>
+          <Text color="yellow" bold>Enter</Text>
+          <Text color="cyan" dimColor> to view details, </Text>
           <Text color="yellow" bold>q</Text>
           <Text color="cyan" dimColor> to quit</Text>
         </Box>

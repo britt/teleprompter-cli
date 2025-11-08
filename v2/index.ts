@@ -1,10 +1,11 @@
 #!/usr/bin/env bun
 
 import { Command } from 'commander'
-import React from 'react'
+import React, { useState } from 'react'
 import { render } from 'ink'
 import { getAccessToken } from './auth.js'
 import { PromptsList } from './components/PromptsList.js'
+import { PromptDetail } from './components/PromptDetail.js'
 
 const program = new Command()
 
@@ -14,6 +15,39 @@ function checkUrl(url: string | undefined): string {
     process.exit(1)
   }
   return url
+}
+
+// Main App component that manages view state
+const App: React.FC<{ url: string; token: string; verbose: boolean }> = ({ url, token, verbose }) => {
+  const [view, setView] = useState<'list' | 'detail'>('list')
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null)
+
+  const handleSelectPrompt = (promptId: string) => {
+    setSelectedPromptId(promptId)
+    setView('detail')
+  }
+
+  const handleBack = () => {
+    setView('list')
+    setSelectedPromptId(null)
+  }
+
+  if (view === 'detail' && selectedPromptId) {
+    return React.createElement(PromptDetail, {
+      promptId: selectedPromptId,
+      url,
+      token,
+      onBack: handleBack,
+      verbose
+    })
+  }
+
+  return React.createElement(PromptsList, {
+    url,
+    token,
+    verbose,
+    onSelectPrompt: handleSelectPrompt
+  })
 }
 
 async function runListCommand(url: string, verbose: boolean) {
@@ -29,9 +63,9 @@ async function runListCommand(url: string, verbose: boolean) {
       console.log(`Using access token: ${accessToken?.substring(0, 10)}...`)
     }
 
-    // Render the Ink UI
+    // Render the App component
     render(
-      React.createElement(PromptsList, {
+      React.createElement(App, {
         url,
         token: accessToken,
         verbose
