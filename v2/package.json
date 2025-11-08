@@ -1,0 +1,32 @@
+{
+  "name": "teleprompter-cli-v2",
+  "version": "0.2.1",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "tp": "./index.ts"
+  },
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun --watch index.ts",
+    "demo": "bun run test-ui.ts"
+  },
+  "author": "Britt Crawford <britt.v.crawford@gmail.com>",
+  "license": "MIT",
+  "description": "Teleprompter CLI v2 - Built with Bun and Ink",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "commander": "^14.0.2",
+    "ink": "^6.4.0",
+    "react": "^19.2.0"
+  }
+}
