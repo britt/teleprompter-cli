@@ -214,7 +214,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
 
   // Handle keyboard input during export
   useInput((input, key) => {
-    if (isExporting && key.ctrl && input === 'b') {
+    if (isExporting && (key.escape || (key.ctrl && input === 'b'))) {
       handleExportCancel()
     }
   }, { isActive: isExporting })

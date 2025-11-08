@@ -14,7 +14,7 @@ export const NewPromptForm = ({ url, token, onBack, onSuccess, verbose = false }
     useInput((input, key) => {
         if (isSubmitting)
             return;
-        if (key.ctrl && input === 'b') {
+        if (key.escape || (key.ctrl && input === 'b')) {
             onBack();
             return;
         }

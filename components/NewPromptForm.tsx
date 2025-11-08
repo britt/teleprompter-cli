@@ -32,7 +32,7 @@ export const NewPromptForm: React.FC<NewPromptFormProps> = ({
   useInput((input, key) => {
     if (isSubmitting) return
 
-    if (key.ctrl && input === 'b') {
+    if (key.escape || (key.ctrl && input === 'b')) {
       onBack()
       return
     }

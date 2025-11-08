@@ -83,7 +83,7 @@ export const PromptDetail = ({ promptId, url, token, onBack, verbose = false }) 
             exit();
             return;
         }
-        if (input === 'b' || input === 'B') {
+        if (key.escape || input === 'b' || input === 'B') {
             onBack();
             return;
         }
@@ -159,7 +159,7 @@ export const PromptDetail = ({ promptId, url, token, onBack, verbose = false }) 
     };
     // Handle keyboard input during export
     useInput((input, key) => {
-        if (isExporting && key.ctrl && input === 'b') {
+        if (isExporting && (key.escape || (key.ctrl && input === 'b'))) {
             handleExportCancel();
         }
     }, { isActive: isExporting });
@@ -241,7 +241,7 @@ export const PromptDetail = ({ promptId, url, token, onBack, verbose = false }) 
             exit();
             return;
         }
-        if (input === 'b' || input === 'B') {
+        if (key.escape || input === 'b' || input === 'B') {
             setView('detail');
             return;
         }
@@ -271,7 +271,7 @@ export const PromptDetail = ({ promptId, url, token, onBack, verbose = false }) 
             exit();
             return;
         }
-        if (input === 'b' || input === 'B') {
+        if (key.escape || input === 'b' || input === 'B') {
             setView('detail');
             return;
         }
