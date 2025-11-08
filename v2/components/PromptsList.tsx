@@ -138,6 +138,21 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
     setExportPath('./')
   }
 
+  // Handle export cancellation
+  const handleExportCancel = () => {
+    setIsExporting(false)
+    setExportStep('pattern')
+    setExportPattern('*')
+    setExportPath('./')
+  }
+
+  // Handle keyboard input during export
+  useInput((input, key) => {
+    if (isExporting && key.ctrl && input === 'b') {
+      handleExportCancel()
+    }
+  }, { isActive: isExporting })
+
   // Handle export path submission
   const handleExportSubmit = async () => {
     if (!prompts) return
@@ -240,7 +255,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
             <Text color="gray" dimColor>Press </Text>
             <Text color="yellow" bold>Enter</Text>
             <Text color="gray" dimColor> to continue or </Text>
-            <Text color="yellow" bold>Ctrl+C</Text>
+            <Text color="yellow" bold>Ctrl+B</Text>
             <Text color="gray" dimColor> to cancel</Text>
           </Box>
         </Box>
@@ -293,7 +308,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
             <Text color="gray" dimColor>Press </Text>
             <Text color="yellow" bold>Enter</Text>
             <Text color="gray" dimColor> to export or </Text>
-            <Text color="yellow" bold>Ctrl+C</Text>
+            <Text color="yellow" bold>Ctrl+B</Text>
             <Text color="gray" dimColor> to cancel</Text>
           </Box>
         </Box>
