@@ -43,13 +43,22 @@ export TP_URL=<teleprompter-service-url>
 
 **The list view is the default!** Just run `./index.ts` and you'll see the interactive prompt list.
 
-### Interactive List Features
+### Interactive Features
 
-- **Navigation**: Use `↑/↓` arrow keys to scroll through prompts
+**List View:**
+- **Navigate**: Use `↑/↓` arrow keys to scroll through prompts
+- **View Details**: Press `Enter` to view full prompt details
 - **Quit**: Press `q` to exit
 - **Display**: Shows ID, Namespace, Version, and Prompt text in aligned columns
 - **Selection**: Currently selected row is highlighted in blue
 - **Scroll indicator**: Shows position (e.g., "Showing 1-17 of 25")
+
+**Detail View:**
+- **View**: Shows complete prompt information including:
+  - ID, Namespace, Version, Created date
+  - Full prompt text with preserved formatting
+- **Go Back**: Press `b` to return to the list view
+- **Quit**: Press `q` to exit
 
 ### Commands
 
