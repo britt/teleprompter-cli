@@ -246,6 +246,11 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
         </Box>
       )
     } else {
+      // Calculate matching prompts for display
+      const regexPattern = exportPattern.replace(/\*/g, '.*')
+      const matcher = new RegExp(`^${regexPattern}$`)
+      const matchingPrompts = prompts?.filter((p: Prompt) => matcher.test(p.id)) || []
+
       return (
         <Box flexDirection="column">
           <Box marginBottom={1}>
@@ -254,6 +259,25 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
           <Box marginBottom={1}>
             <Text color="cyan">Pattern: </Text>
             <Text color="white">{exportPattern}</Text>
+          </Box>
+          <Box marginBottom={1}>
+            <Text color="cyan">Matching prompts ({matchingPrompts.length}):</Text>
+          </Box>
+          <Box flexDirection="column" marginBottom={1} paddingLeft={2}>
+            {matchingPrompts.length === 0 ? (
+              <Text color="yellow">No prompts match this pattern</Text>
+            ) : (
+              matchingPrompts.slice(0, 10).map((p) => (
+                <Text key={p.id} color="gray">
+                  • {p.id} ({p.namespace} v{p.version})
+                </Text>
+              ))
+            )}
+            {matchingPrompts.length > 10 && (
+              <Text color="gray" dimColor>
+                ... and {matchingPrompts.length - 10} more
+              </Text>
+            )}
           </Box>
           <Box marginBottom={1}>
             <Text color="cyan">Export directory: </Text>
