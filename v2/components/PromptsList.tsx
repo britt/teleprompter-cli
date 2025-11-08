@@ -4,6 +4,7 @@ import TextInput from 'ink-text-input'
 import axios from 'axios'
 import * as path from 'path'
 import { promises as fsPromises } from 'fs'
+import { NewPromptForm } from './NewPromptForm.js'
 
 export interface Prompt {
   id: string
@@ -39,7 +40,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
   const [exportPattern, setExportPattern] = useState('*')
   const [exportPath, setExportPath] = useState('./')
   const [exportMessage, setExportMessage] = useState<string | null>(null)
-  const [view, setView] = useState<'list' | 'versions' | 'rollback'>('list')
+  const [view, setView] = useState<'list' | 'versions' | 'rollback' | 'new'>('list')
   const [versions, setVersions] = useState<PromptVersion[] | null>(null)
   const [versionsLoading, setVersionsLoading] = useState(false)
   const [selectedVersionIndex, setSelectedVersionIndex] = useState(0)
@@ -122,6 +123,11 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
       setIsExporting(true)
       setExportStep('pattern')
       setExportPattern('*')
+      return
+    }
+
+    if (input === 'n' || input === 'N') {
+      setView('new')
       return
     }
 
@@ -423,6 +429,38 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
 
       setTimeout(() => setExportMessage(null), 3000)
     }
+  }
+
+  // Handle successful prompt creation
+  const handleNewPromptSuccess = async () => {
+    setView('list')
+    // Refresh the prompts list
+    try {
+      const response = await axios.get(`${url}/prompts`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'cf-access-token': token
+        }
+      })
+      setPrompts(response.data)
+    } catch (err) {
+      if (verbose) {
+        console.error('Error refreshing prompts:', err instanceof Error ? err.message : 'Unknown error')
+      }
+    }
+  }
+
+  // Show new prompt form
+  if (view === 'new') {
+    return (
+      <NewPromptForm
+        url={url}
+        token={token}
+        onBack={() => setView('list')}
+        onSuccess={handleNewPromptSuccess}
+        verbose={verbose}
+      />
+    )
   }
 
   // Show versions view
@@ -788,6 +826,8 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
         </Box>
         <Box paddingX={1}>
           <Text color="cyan" dimColor>Press </Text>
+          <Text color="yellow" bold>n</Text>
+          <Text color="cyan" dimColor> for new, </Text>
           <Text color="yellow" bold>e</Text>
           <Text color="cyan" dimColor> to export, </Text>
           <Text color="yellow" bold>v</Text>

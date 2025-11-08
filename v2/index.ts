@@ -6,6 +6,8 @@ import { render } from 'ink'
 import { getAccessToken } from './auth.js'
 import { PromptsList } from './components/PromptsList.js'
 import { PromptDetail } from './components/PromptDetail.js'
+import { promises as fsPromises } from 'fs'
+import axios from 'axios'
 
 const program = new Command()
 
@@ -99,6 +101,103 @@ program
     const url = checkUrl(options.url || process.env.TP_URL)
     const verbose = options.verbose || false
     await runListCommand(url, verbose)
+  })
+
+program
+  .command('import <files...>')
+  .description('Import prompts from JSON files')
+  .action(async (files: string[]) => {
+    const options = program.opts()
+    const url = checkUrl(options.url || process.env.TP_URL)
+    const verbose = options.verbose || false
+
+    console.log('Importing prompts from files:', files.join(', '))
+    if (verbose) {
+      console.log(`Using service URL: ${url}`)
+    }
+
+    try {
+      const accessToken = await getAccessToken(url)
+      if (verbose) {
+        console.log(`Using access token: ${accessToken?.substring(0, 10)}...`)
+      }
+
+      for (const file of files) {
+        try {
+          if (verbose) {
+            console.log(`Processing file: ${file}`)
+          }
+          const content = await fsPromises.readFile(file, 'utf-8')
+          if (verbose) {
+            console.log(`File content length: ${content.length} characters`)
+          }
+          const prompts = JSON.parse(content)
+
+          // Handle both single prompt and array of prompts
+          const promptsArray = Array.isArray(prompts) ? prompts : [prompts]
+          if (verbose) {
+            console.log(`Found ${promptsArray.length} prompts in file`)
+          }
+
+          for (const prompt of promptsArray) {
+            if (!prompt.id || !prompt.namespace || !prompt.prompt) {
+              console.error(`Skipping invalid prompt in ${file}: Missing required fields`)
+              if (verbose) {
+                console.log(`Invalid prompt: ${JSON.stringify(prompt, null, 2)}`)
+              }
+              continue
+            }
+
+            try {
+              if (verbose) {
+                console.log(`Importing prompt: ${prompt.id}`)
+              }
+              const payload = {
+                id: prompt.id,
+                namespace: prompt.namespace,
+                prompt: prompt.prompt
+              }
+              if (verbose) {
+                console.log(`Request payload: ${JSON.stringify(payload, null, 2)}`)
+              }
+
+              const response = await axios.post(`${url}/prompts`, JSON.stringify(payload), {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${accessToken}`,
+                  'cf-access-token': accessToken
+                }
+              })
+
+              if (verbose) {
+                console.log(`Response status: ${response.status}`)
+              }
+              console.log(`Successfully imported prompt: ${prompt.id}`)
+            } catch (error) {
+              console.error(`Error importing prompt ${prompt.id}:`, error instanceof Error ? error.message : 'Unknown error')
+              if (verbose && error instanceof Error) {
+                console.error(`Stack trace: ${error.stack}`)
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing file ${file}:`, error instanceof Error ? error.message : 'Unknown error')
+          if (verbose && error instanceof Error) {
+            console.error(`Stack trace: ${error.stack}`)
+          }
+        }
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error during import:', error.message)
+        if (verbose) {
+          console.error(`Stack trace: ${error.stack}`)
+        }
+      } else {
+        console.error('An unknown error occurred during import')
+      }
+      process.exit(1)
+    }
   })
 
 // Default action when no command is specified
