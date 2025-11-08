@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { Box, Text, useInput, useApp, useStdout } from 'ink'
+import TextInput from 'ink-text-input'
 import axios from 'axios'
 import { Prompt } from './PromptsList.js'
+import * as path from 'path'
+import { promises as fsPromises } from 'fs'
 
 interface PromptDetailProps {
   promptId: string
@@ -22,6 +25,9 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [scrollOffset, setScrollOffset] = useState(0)
+  const [exportMessage, setExportMessage] = useState<string | null>(null)
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportPath, setExportPath] = useState('')
   const { exit } = useApp()
   const { stdout } = useStdout()
 
@@ -65,8 +71,22 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
     fetchPromptDetail()
   }, [promptId, url, token, verbose])
 
+  // Generate default export filename
+  const getDefaultExportPath = (promptToExport: Prompt): string => {
+    const filename = promptToExport.id
+      .replace(/:/g, '_')
+      .replace(/([A-Z])/g, '_$1')
+      .toLowerCase()
+    return `./${filename}.json`
+  }
+
   // Handle keyboard input
   useInput((input, key) => {
+    // Don't handle normal navigation when exporting
+    if (isExporting) {
+      return
+    }
+
     if (input === 'q') {
       exit()
       return
@@ -74,6 +94,15 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
 
     if (input === 'b' || input === 'B') {
       onBack()
+      return
+    }
+
+    if (input === 'e' || input === 'E') {
+      if (prompt) {
+        const defaultPath = getDefaultExportPath(prompt)
+        setExportPath(defaultPath)
+        setIsExporting(true)
+      }
       return
     }
 
@@ -91,7 +120,85 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
     if (key.downArrow) {
       setScrollOffset(prev => Math.min(Math.max(0, totalLines - maxVisibleLines), prev + 1))
     }
-  })
+  }, { isActive: !isExporting })
+
+  // Export prompt to JSON file
+  const exportPrompt = async (filepath: string, promptToExport: Prompt) => {
+    try {
+      const exportData = {
+        id: promptToExport.id,
+        namespace: promptToExport.namespace,
+        prompt: promptToExport.prompt
+      }
+
+      await fsPromises.writeFile(
+        filepath,
+        JSON.stringify(exportData, null, 2)
+      )
+
+      setExportMessage(`Exported to ${filepath}`)
+      setIsExporting(false)
+
+      if (verbose) {
+        console.log(`Exported ${promptToExport.id} to ${filepath}`)
+      }
+
+      // Clear message after 3 seconds
+      setTimeout(() => setExportMessage(null), 3000)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setExportMessage(`Export failed: ${errorMessage}`)
+      setIsExporting(false)
+
+      if (verbose) {
+        console.error('Error exporting prompt:', errorMessage)
+      }
+
+      // Clear message after 3 seconds
+      setTimeout(() => setExportMessage(null), 3000)
+    }
+  }
+
+  // Handle export path submission
+  const handleExportSubmit = () => {
+    if (prompt && exportPath) {
+      exportPrompt(exportPath, prompt)
+    }
+  }
+
+  // Handle export cancellation
+  const handleExportCancel = () => {
+    setIsExporting(false)
+    setExportPath('')
+  }
+
+  // Show export input interface
+  if (isExporting && prompt) {
+    return (
+      <Box flexDirection="column">
+        <Box marginBottom={1}>
+          <Text color="green" bold>Export Prompt</Text>
+        </Box>
+        <Box marginBottom={1}>
+          <Text color="cyan">Export path: </Text>
+        </Box>
+        <Box marginBottom={1}>
+          <TextInput
+            value={exportPath}
+            onChange={setExportPath}
+            onSubmit={handleExportSubmit}
+          />
+        </Box>
+        <Box>
+          <Text color="gray" dimColor>Press </Text>
+          <Text color="yellow" bold>Enter</Text>
+          <Text color="gray" dimColor> to export or </Text>
+          <Text color="yellow" bold>Ctrl+C</Text>
+          <Text color="gray" dimColor> to cancel</Text>
+        </Box>
+      </Box>
+    )
+  }
 
   if (loading) {
     return (
@@ -203,11 +310,18 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
             </>
           )}
           <Text color="cyan" dimColor>Press </Text>
+          <Text color="yellow" bold>e</Text>
+          <Text color="cyan" dimColor> to export, </Text>
           <Text color="yellow" bold>b</Text>
-          <Text color="cyan" dimColor> to go back or </Text>
+          <Text color="cyan" dimColor> to go back, </Text>
           <Text color="yellow" bold>q</Text>
           <Text color="cyan" dimColor> to quit</Text>
         </Box>
+        {exportMessage && (
+          <Box paddingX={1}>
+            <Text color="green">{exportMessage}</Text>
+          </Box>
+        )}
       </Box>
     </Box>
   )
