@@ -1,93 +1,114 @@
-# Teleprompter CLI
+# Teleprompter CLI v2
 
-This is a command-line interface (CLI) tool designed to work with the [Teleprompter](https://github.com/britt/teleprompter) project. It provides a convenient way to interact with the Teleprompter service, allowing you to manage LLM prompts and update them at runtime.
+A modern Teleprompter CLI built with the Bun runtime and Ink for an interactive terminal UI. Use it to browse, create, version, rollback, import, and export prompts. All commands support JSON output for scripting.
 
-## Overview
+## Requirements
 
-The Teleprompter CLI is built to complement the Teleprompter service, which is a system for managing and versioning prompts for large language models (LLMs). This CLI tool enables users to perform various operations on prompts, such as listing, creating, updating, and rolling back versions, all from the command line.
+- Bun installed: https://bun.sh
+- A running Teleprompter service URL
 
-## Features
+## Install
 
-- List all active prompts
-- Create new versions of prompts
-- List all versions of a specific prompt
-- Rollback to a specific version of a prompt
-- Fetch a prompt by ID
+From this repository:
 
-## Installation
+- cd v2
+- bun install
 
-To install the Teleprompter CLI, follow these steps:
+## Quick start
 
-1. Clone this repository
-2. Navigate to the project directory
-3. Run `npm install` to install dependencies
-4. Run `npm link` to make the `tp` command available globally
+Run the interactive UI (default action):
 
-## Building
+- cd v2
+- bun run index.ts --url https://your-teleprompter.example.com
 
-After installing dependencies you can build the default CLI with:
+You can also set an environment variable instead of passing --url:
 
-```
-npm run build
-```
+- export TP_URL=https://your-teleprompter.example.com
+- bun run index.ts
 
-The Ink-based version is built separately:
+## Interactive UI (Ink)
 
-```
-npm run build:ink
-```
+Keys:
+- Up/Down: Move selection
+- Enter: View details
+- b: Back to list
+- v: View versions
+- r: Rollback to a selected version
+- e: Export prompts
+- n: New prompt form
+- q: Quit
+- Ctrl+B: Cancel an in-progress dialog (export/new prompt)
 
-## Usage
+Views:
+- List: Scroll through all active prompts; columns include id, namespace, version, and a single-line preview
+- Detail: Shows id, namespace, version, created date, and full prompt text; long prompts are scrollable with a position indicator
+- Versions: Browse all versions with human-readable dates; select a version to view or press r to rollback
 
-The general syntax for using the Teleprompter CLI is:
+## Scriptable CLI commands
 
-```
-tp <command> [options]
-```
+All commands accept --json (-j) for machine-readable output. Global options include --url (or TP_URL) and --verbose.
 
-Here are some example commands:
+- list
+  List all active prompts.
+  Examples:
+  - bun run index.ts list --url $TP_URL
+  - bun run index.ts list --url $TP_URL --json
 
-- List all prompts:
-  ```
-  tp list --url https://your-teleprompter-service-url.com
-  ```
+- get <promptId>
+  Fetch a specific prompt.
+  Examples:
+  - bun run index.ts get my-prompt --url $TP_URL
+  - bun run index.ts get my-prompt --url $TP_URL --json
 
-- Create a new version of a prompt:
-  ```
-  tp put myPrompt "This is the new prompt text" --url https://your-teleprompter-service-url.com
-  ```
+- put <name> <namespace> [text]
+  Create a new version of a prompt. If [text] is omitted, the prompt body can be read from stdin.
+  Examples:
+  - bun run index.ts put my-prompt my-namespace "prompt text" --url $TP_URL
+  - cat prompt.txt | bun run index.ts put my-prompt my-namespace --url $TP_URL
 
-- List all versions of a prompt:
-  ```
-  tp versions myPrompt --url https://your-teleprompter-service-url.com
-  ```
+- versions <promptId>
+  List all versions of a prompt with human-readable timestamps.
 
-- Rollback to a specific version:
-  ```
-  tp rollback myPrompt 2 --url https://your-teleprompter-service-url.com
-  ```
+- rollback <promptId> <version>
+  Restore a specific version (version is a Unix timestamp).
 
-- Fetch a prompt by ID:
-  ```
-  tp get myPrompt --url https://your-teleprompter-service-url.com
-  ```
+- export <pattern> [-o|--out <directory>]
+  Export prompts matching a pattern ("*" for all, or prefix patterns like "prefix:*"). Filenames are snake_case.
+  Example:
+  - bun run index.ts export "*" -o ./exports --url $TP_URL
+
+- import <files...>
+  Import prompts from one or more JSON files. Each file may contain a single prompt object or an array of prompts with fields: id, namespace, prompt.
+
+JSON mode:
+- Add --json (-j) to print results as JSON and suppress verbose logs.
 
 ## Authentication
 
-The CLI supports authentication with Cloudflare Access for secure communication with the Teleprompter service. For local development, it uses a default token.
+- Uses Cloudflare Access. The token is cached at $HOME/.teleprompter/token (permissions 0600).
+- When the host is localhost or 127.0.0.1, a default development token is used.
 
-## Cloudflare Warp Access Control
+## Environment and options
 
-Teleprompter has no authentication system of its own. It uses Cloudflare Warp for access control. The authentication token retrieved from Cloudflare is stored in `$HOME/.teleprompter/token`. The token file permissions are set to 0600 to ensure it is private to the owner.
+- TP_URL: Service base URL (alternative to --url)
+- --url <url>: Service URL (global)
+- --verbose: Enable verbose logging
+- --json (-j): JSON output (per-command)
 
-## Contributing
+## Development
 
-Contributions to the Teleprompter CLI are welcome! Please feel free to submit pull requests or create issues for bugs and feature requests.
+- Run in watch mode: bun run dev (from v2/)
+- Demo with mock data: bun run demo
+
+## Troubleshooting
+
+- Ensure Bun is installed and on PATH.
+- For Cloudflare Access, ensure you can obtain a token for the service URL.
 
 ## License
 
-This project is licensed under the MIT License. The full license text can be found in the [LICENSE](LICENSE) file in the root directory of this repository.
+MIT. See LICENSE.
 
-## Related Projects
+## Related
 
-- [Teleprompter Service](https://github.com/britt/teleprompter): The backend service that this CLI interacts with.
+- Teleprompter service: https://github.com/britt/teleprompter
