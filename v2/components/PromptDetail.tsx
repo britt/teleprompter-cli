@@ -109,7 +109,10 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
   }
 
   // Split prompt text into lines for better display
-  const promptLines = prompt.prompt?.split('\n') || []
+  // Handle both actual newlines and escaped \n sequences
+  const promptText = prompt.prompt || ''
+  const normalizedText = promptText.replace(/\\n/g, '\n') // Replace escaped \n with actual newlines
+  const promptLines = normalizedText.split('\n')
 
   return (
     <Box flexDirection="column" height="100%">
