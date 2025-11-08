@@ -1,151 +1,79 @@
 # Teleprompter CLI v2
 
-A modern rewrite of the Teleprompter CLI using [Bun](https://bun.com) and [Ink](https://github.com/vadimdemedes/ink) for a beautiful terminal UI experience.
+A modern rewrite of the Teleprompter CLI using Bun and Ink. This README covers the interactive UI, scriptable commands, authentication, and development workflow.
 
-## Features
+## Requirements
 
-- **Built with Bun**: Fast JavaScript runtime with native TypeScript support
-- **Interactive Ink UI**: Beautiful, React-based terminal interface with:
-  - Scrollable list navigation with arrow keys
-  - Row highlighting for better visibility
-  - Full-width display that adapts to terminal size
-  - Loading states and error handling
-  - Persistent display until you quit
-- **Modern Architecture**: Clean separation of concerns with modular components
-- **Type-safe**: Full TypeScript support
-- **Keyboard Controls**:
-  - `↑/↓` - Navigate through prompts
-  - `q` - Quit the application
+- Bun: https://bun.sh
+- Teleprompter service URL
 
-## Installation
+## Install
 
-Install dependencies:
+- cd v2
+- bun install
 
-```bash
-bun install
-```
+## Run (interactive UI)
 
-## Usage
+- bun run index.ts --url https://your-teleprompter.example.com
+- Or set TP_URL and run: export TP_URL=https://your-teleprompter.example.com; bun run index.ts
 
-The CLI displays an interactive list of prompts by default:
+### Keyboard
+- ↑/↓: Navigate
+- Enter: Details
+- b: Back
+- v: Versions
+- r: Rollback
+- e: Export
+- n: New prompt
+- q: Quit
+- Ctrl+B: Cancel dialogs (export/new)
 
-```bash
-# Using the executable directly
-./index.ts --url <teleprompter-service-url>
+### Views
+- List: Scroll through all active prompts; shows id, namespace, version, and a single-line preview
+- Detail: Shows id, namespace, version, created date, and full prompt text; long prompts are scrollable with a position indicator
+- Versions: Browse all versions with human-readable dates; press Enter to view or r to rollback; b to return
 
-# Or with bun
-bun run index.ts --url <teleprompter-service-url>
+## Scriptable commands (all support --json)
 
-# Or set TP_URL environment variable
-export TP_URL=<teleprompter-service-url>
-./index.ts
-```
+Global options: --url <url> (or TP_URL), --verbose, --help
 
-**The list view is the default!** Just run `./index.ts` and you'll see the interactive prompt list.
+- list
+  - bun run index.ts list --url $TP_URL
+  - bun run index.ts list --url $TP_URL --json
 
-### Interactive Features
+- get <promptId>
+  - bun run index.ts get my-prompt --url $TP_URL
+  - bun run index.ts get my-prompt --url $TP_URL --json
 
-**List View:**
-- **Navigate**: Use `↑/↓` arrow keys to scroll through prompts
-- **View Details**: Press `Enter` to view full prompt details
-- **Quit**: Press `q` to exit
-- **Display**: Shows ID, Namespace, Version, and Prompt text in aligned columns
-- **Selection**: Currently selected row is highlighted in blue
-- **Scroll indicator**: Shows position (e.g., "Showing 1-17 of 25")
+- put <name> <namespace> [text]
+  - bun run index.ts put my-prompt my-namespace "prompt text" --url $TP_URL
+  - cat prompt.txt | bun run index.ts put my-prompt my-namespace --url $TP_URL
 
-**Detail View:**
-- **View**: Shows complete prompt information including:
-  - ID, Namespace, Version, Created date (pinned at top)
-  - Full prompt text with preserved formatting (scrollable)
-- **Scroll**: Use `↑/↓` arrow keys to scroll through long prompts
-- **Scroll Indicator**: Shows position when prompt is longer than screen (e.g., "Showing lines 1-15 of 42")
-- **Go Back**: Press `b` to return to the list view
-- **Quit**: Press `q` to exit
-- **Layout**: Header pinned at top, footer pinned at bottom, prompt text scrolls in between
+- versions <promptId>
+  - bun run index.ts versions my-prompt --url $TP_URL
 
-### Commands
+- rollback <promptId> <version>
+  - bun run index.ts rollback my-prompt 1234567890 --url $TP_URL
 
-- `list` - Explicitly run the list command (same as default behavior)
+- export <pattern> [-o|--out <dir>]
+  - bun run index.ts export "*" -o ./exports --url $TP_URL
+  - Pattern supports wildcards (e.g., "prefix:*", "*"); filenames are snake_case
 
-### Options
+- import <files...>
+  - bun run index.ts import exports/*.json --url $TP_URL
+  - bun run index.ts import file1.json file2.json --url $TP_URL --json
 
-- `-u, --url <url>` - URL of the teleprompter service (or set `TP_URL` environment variable)
-- `-v, --verbose` - Enable verbose logging
-- `-h, --help` - Display help
+## Authentication
+
+- Cloudflare Access token cached at $HOME/.teleprompter/token (0600)
+- Localhost/127.0.0.1 uses a default development token
 
 ## Development
 
-Start the CLI in watch mode:
+- Watch mode: bun run dev
+- Demo (mock data): bun run demo
 
-```bash
-bun run dev
-```
+## Notes
 
-### Demo Mode
-
-Test the UI with mock data (no server required):
-
-```bash
-bun run demo
-```
-
-This will display a scrollable list of 25 sample prompts to demonstrate the UI features.
-
-## Project Structure
-
-```
-v2/
-├── index.ts              # Main CLI entry point
-├── auth.ts               # Authentication utilities
-├── test-ui.ts            # Demo mode with mock data
-├── components/
-│   └── PromptsList.tsx   # Ink component for displaying prompts
-└── package.json
-```
-
-## Architecture
-
-- **index.ts**: CLI setup using Commander.js, renders the Ink UI
-- **auth.ts**: Handles Cloudflare Access authentication and token management
-- **components/PromptsList.tsx**: Interactive Ink/React component featuring:
-  - Keyboard navigation with arrow keys (↑/↓ to scroll)
-  - Dynamic viewport that adapts to terminal height
-  - **Pinned header** that stays at the top while scrolling
-  - **Pinned footer** at the bottom with quit instructions
-  - Selected row highlighting with blue background
-  - Consistent column widths across all rows
-  - Loading states and error handling
-- **test-ui.ts**: Standalone demo mode with 25 mock prompts for testing
-
-## UI Features
-
-The list view includes:
-
-### Fixed Header (Always Visible)
-- Title showing total count
-- Column headers: ID, Namespace, Version, Prompt
-- Horizontal separator line
-
-### Scrollable Content Area
-- Displays only rows that fit in terminal height
-- Selected row highlighted with blue background
-- **Fixed Column Widths** (all rows aligned perfectly):
-  - ID: 35 characters
-  - Namespace: 25 characters
-  - Version: 15 characters
-  - Prompt: 60 characters
-
-### Color Coding
-- Selected row: Blue background with white text
-- ID: Default/white
-- Namespace: Magenta
-- Version: Yellow
-- Prompt: Gray
-
-### Fixed Footer (Always Visible)
-- Pinned at bottom of screen
-- Shows "Press **q** to quit" instruction
-- Horizontal separator line on top only (no box border)
-- Fits exactly within terminal height
-
-This project was created using `bun init` in bun v1.2.21.
+- The interactive list view is the default action when no command is specified.
+- Use --json (-j) to emit machine-readable output and suppress verbose logs.
