@@ -1,6 +1,6 @@
 {
   "name": "teleprompter-cli",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "Interactive CLI for managing LLM prompts with Cloudflare Workers",
   "type": "module",
   "bin": {
