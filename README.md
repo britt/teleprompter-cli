@@ -94,6 +94,11 @@ The CLI uses Cloudflare Access for authentication:
 - For localhost development: Uses a default token
 - For remote URLs: Uses `cloudflared access login` to authenticate
 - Tokens are cached in `~/.teleprompter/token`
+- Automatic token handling:
+  - All requests include `Authorization` and `cf-access-token` headers automatically
+  - If the server returns `401 Unauthorized`, the CLI re-authenticates via Cloudflare Access
+  - The original request retries automatically after re-authentication
+  - The terminal shows: `Token expired or invalid. Re-authenticating...`
 
 ## Development
 
@@ -101,6 +106,7 @@ The CLI uses Cloudflare Access for authentication:
 
 - Node.js >= 18.0.0
 - [Bun](https://bun.sh) (for development/testing)
+- [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/install-and-setup/installation/) (required for Cloudflare Access on remote URLs)
 
 ### Setup
 
@@ -114,13 +120,13 @@ npm run build
 ```bash
 npm run build     # Compile TypeScript to JavaScript
 npm run dev       # Watch mode for development
-npm test          # Run test suite (56 tests)
+npm test          # Run test suite (59 tests)
 npm start         # Run the CLI
 ```
 
 ### Testing
 
-The project includes a comprehensive test suite with 56 tests covering:
+The project includes a comprehensive test suite with 59 tests covering:
 
 - Authentication and token management
 - All CLI commands and flags
@@ -138,7 +144,7 @@ npm test -- --coverage  # Run with coverage report
 - **Runtime**: Node.js (TypeScript compiled to JavaScript)
 - **UI Framework**: Ink (React for CLIs)
 - **CLI Framework**: Commander.js
-- **HTTP Client**: Axios
+- **HTTP Client**: Axios with interceptors (adds auth headers and automatically re-authenticates/retries on 401)
 - **Testing**: Bun test + ink-testing-library
 
 ## Project Structure
@@ -151,6 +157,7 @@ teleprompter-cli/
 │   ├── PromptDetail.tsx
 │   └── NewPromptForm.tsx
 ├── index.ts              # Main CLI entry point
+├── http-client.ts        # Centralized Axios client with auth interceptors
 ├── auth.ts               # Authentication module
 ├── *.test.ts(x)          # Test files
 ├── package.json          # NPM package configuration
