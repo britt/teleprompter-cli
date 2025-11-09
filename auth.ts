@@ -87,3 +87,14 @@ export async function getAccessToken(url: string): Promise<string> {
   const newToken = await cloudflareAccessLogin(url)
   return newToken
 }
+
+export async function forceReauthenticate(url: string): Promise<string> {
+  const parsedUrl = new URL(url)
+  if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') {
+    return DEFAULT_LOCAL_TOKEN
+  }
+
+  // Force new authentication even if a token exists
+  const newToken = await cloudflareAccessLogin(url)
+  return newToken
+}

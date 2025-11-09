@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Box, Text, useInput, useApp } from 'ink'
 import TextInput from 'ink-text-input'
-import axios from 'axios'
+import httpClient from '../http-client.js'
 
 interface NewPromptFormProps {
   url: string
@@ -86,11 +86,9 @@ export const NewPromptForm: React.FC<NewPromptFormProps> = ({
         console.log(`Request payload: ${JSON.stringify(payload, null, 2)}`)
       }
 
-      const response = await axios.post(`${url}/prompts`, JSON.stringify(payload), {
+      const response = await httpClient.post(`${url}/prompts`, JSON.stringify(payload), {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'cf-access-token': token
+          'Content-Type': 'application/json'
         }
       })
 

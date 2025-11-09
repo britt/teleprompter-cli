@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Box, Text, useInput, useApp, useStdout } from 'ink'
 import TextInput from 'ink-text-input'
-import axios from 'axios'
+import httpClient from '../http-client.js'
 import { Prompt } from './PromptsList.js'
 import * as path from 'path'
 import { promises as fsPromises } from 'fs'
@@ -58,12 +58,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
           console.log(`Fetching prompt details for: ${promptId}`)
         }
 
-        const response = await axios.get(`${url}/prompts/${promptId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'cf-access-token': token
-          }
-        })
+        const response = await httpClient.get(`${url}/prompts/${promptId}`)
 
         if (verbose) {
           console.log(`Response status: ${response.status}`)
@@ -227,12 +222,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
         console.log(`Fetching versions for: ${prompt.id}`)
       }
 
-      const response = await axios.get(`${url}/prompts/${prompt.id}/versions`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'cf-access-token': token
-        }
-      })
+      const response = await httpClient.get(`${url}/prompts/${prompt.id}/versions`)
 
       if (verbose) {
         console.log(`Found ${response.data.length} versions`)
@@ -260,15 +250,9 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
         console.log(`Rolling back ${prompt.id} to version ${version}`)
       }
 
-      const response = await axios.post(
+      const response = await httpClient.post(
         `${url}/prompts/${prompt.id}/versions/${version}`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'cf-access-token': token
-          }
-        }
+        {}
       )
 
       if (verbose) {
@@ -279,12 +263,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       setView('detail')
 
       // Refresh the prompt data
-      const detailResponse = await axios.get(`${url}/prompts/${promptId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'cf-access-token': token
-        }
-      })
+      const detailResponse = await httpClient.get(`${url}/prompts/${promptId}`)
       setPrompt(detailResponse.data)
 
       // Clear message after 3 seconds

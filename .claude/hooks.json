@@ -1,0 +1,12 @@
+{
+  "preToolCall": [
+    {
+      "hook": "test-before-git-commit",
+      "tools": ["Bash"],
+      "pattern": "git commit",
+      "command": "bun test",
+      "blocking": true,
+      "description": "Run tests before any git commit to ensure all tests pass"
+    }
+  ]
+}

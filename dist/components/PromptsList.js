@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput, useApp, useStdout } from 'ink';
 import TextInput from 'ink-text-input';
-import axios from 'axios';
+import httpClient from '../http-client.js';
 import * as path from 'path';
 import { promises as fsPromises } from 'fs';
 import { NewPromptForm } from './NewPromptForm.js';
@@ -54,12 +54,7 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
                 if (verbose) {
                     console.log(`Making request to: ${url}/prompts`);
                 }
-                const response = await axios.get(`${url}/prompts`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'cf-access-token': token
-                    }
-                });
+                const response = await httpClient.get(`${url}/prompts`);
                 if (verbose) {
                     console.log(`Response status: ${response.status}`);
                     console.log(`Found ${response.data.length} prompts`);
@@ -202,12 +197,7 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
             if (verbose) {
                 console.log(`Fetching versions for: ${promptId}`);
             }
-            const response = await axios.get(`${url}/prompts/${promptId}/versions`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'cf-access-token': token
-                }
-            });
+            const response = await httpClient.get(`${url}/prompts/${promptId}/versions`);
             if (verbose) {
                 console.log(`Found ${response.data.length} versions`);
             }
@@ -231,24 +221,14 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
             if (verbose) {
                 console.log(`Rolling back ${promptId} to version ${version}`);
             }
-            const response = await axios.post(`${url}/prompts/${promptId}/versions/${version}`, {}, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'cf-access-token': token
-                }
-            });
+            const response = await httpClient.post(`${url}/prompts/${promptId}/versions/${version}`, {});
             if (verbose) {
                 console.log(`Rollback successful`);
             }
             setRollbackMessage(`Rolled back ${promptId} to version ${version}`);
             setView('list');
             // Refresh the prompts list
-            const listResponse = await axios.get(`${url}/prompts`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'cf-access-token': token
-                }
-            });
+            const listResponse = await httpClient.get(`${url}/prompts`);
             setPrompts(listResponse.data);
             // Clear message after 3 seconds
             setTimeout(() => setRollbackMessage(null), 3000);
@@ -339,12 +319,7 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
             for (const promptInfo of matchingPrompts) {
                 try {
                     // Get full prompt details
-                    const detailResponse = await axios.get(`${url}/prompts/${promptInfo.id}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'cf-access-token': token
-                        }
-                    });
+                    const detailResponse = await httpClient.get(`${url}/prompts/${promptInfo.id}`);
                     const prompt = detailResponse.data;
                     // Convert prompt ID to snake case filename
                     const filename = prompt.id
@@ -388,12 +363,7 @@ export const PromptsList = ({ url, token, verbose = false, onSelectPrompt }) => 
         setView('list');
         // Refresh the prompts list
         try {
-            const response = await axios.get(`${url}/prompts`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'cf-access-token': token
-                }
-            });
+            const response = await httpClient.get(`${url}/prompts`);
             setPrompts(response.data);
         }
         catch (err) {

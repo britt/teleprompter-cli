@@ -9,6 +9,7 @@ import { PromptDetail } from './components/PromptDetail.js'
 import { promises as fsPromises } from 'fs'
 import * as fs from 'fs'
 import axios from 'axios'
+import httpClient, { initHttpClient, getCurrentToken } from './http-client.js'
 import * as path from 'path'
 
 const program = new Command()
@@ -61,7 +62,8 @@ async function runListCommand(url: string, verbose: boolean) {
       console.log(`Using service URL: ${url}`)
     }
 
-    const accessToken = await getAccessToken(url)
+    await initHttpClient(url)
+    const accessToken = getCurrentToken()
 
     if (verbose) {
       console.log(`Using access token: ${accessToken?.substring(0, 10)}...`)
@@ -71,7 +73,7 @@ async function runListCommand(url: string, verbose: boolean) {
     render(
       React.createElement(App, {
         url,
-        token: accessToken,
+        token: accessToken || '',
         verbose
       })
     )
@@ -107,13 +109,8 @@ program
     if (cmdOptions.json) {
       // JSON mode - fetch and output as JSON
       try {
-        const accessToken = await getAccessToken(url)
-        const response = await axios.get(`${url}/prompts`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'cf-access-token': accessToken
-          }
-        })
+        await initHttpClient(url)
+        const response = await httpClient.get(`${url}/prompts`)
         console.log(JSON.stringify(response.data, null, 2))
       } catch (error) {
         if (error instanceof Error) {
@@ -146,7 +143,8 @@ program
     const results: any[] = []
 
     try {
-      const accessToken = await getAccessToken(url)
+      await initHttpClient(url)
+      const accessToken = getCurrentToken()
       if (verbose) {
         console.log(`Using access token: ${accessToken?.substring(0, 10)}...`)
       }
@@ -195,11 +193,9 @@ program
                 console.log(`Request payload: ${JSON.stringify(payload, null, 2)}`)
               }
 
-              const response = await axios.post(`${url}/prompts`, JSON.stringify(payload), {
+              const response = await httpClient.post(`${url}/prompts`, JSON.stringify(payload), {
                 headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${accessToken}`,
-                  'cf-access-token': accessToken
+                  'Content-Type': 'application/json'
                 }
               })
 
@@ -274,17 +270,13 @@ program
     }
 
     try {
-      const accessToken = await getAccessToken(url)
+      await initHttpClient(url)
+      const accessToken = getCurrentToken()
       if (verbose) {
         console.log(`Using access token: ${accessToken?.substring(0, 10)}...`)
       }
 
-      const response = await axios.get(`${url}/prompts/${promptId}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'cf-access-token': accessToken
-        }
-      })
+      const response = await httpClient.get(`${url}/prompts/${promptId}`)
 
       if (verbose) {
         console.log(`Response status: ${response.status}`)
@@ -357,7 +349,8 @@ program
     }
 
     try {
-      const accessToken = await getAccessToken(url)
+      await initHttpClient(url)
+      const accessToken = getCurrentToken()
       if (verbose && !cmdOptions.json) {
         console.log(`Using access token: ${accessToken?.substring(0, 10)}...`)
       }
@@ -372,11 +365,9 @@ program
         console.log(`Request payload: ${JSON.stringify(payload, null, 2)}`)
       }
 
-      const response = await axios.post(`${url}/prompts`, JSON.stringify(payload), {
+      const response = await httpClient.post(`${url}/prompts`, JSON.stringify(payload), {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          'cf-access-token': accessToken
+          'Content-Type': 'application/json'
         }
       })
 
@@ -430,17 +421,13 @@ program
     }
 
     try {
-      const accessToken = await getAccessToken(url)
+      await initHttpClient(url)
+      const accessToken = getCurrentToken()
       if (verbose && !cmdOptions.json) {
         console.log(`Using access token: ${accessToken?.substring(0, 10)}...`)
       }
 
-      const response = await axios.get(`${url}/prompts/${promptId}/versions`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'cf-access-token': accessToken
-        }
-      })
+      const response = await httpClient.get(`${url}/prompts/${promptId}/versions`)
 
       if (verbose && !cmdOptions.json) {
         console.log(`Response status: ${response.status}`)
@@ -514,20 +501,15 @@ program
     }
 
     try {
-      const accessToken = await getAccessToken(url)
+      await initHttpClient(url)
+      const accessToken = getCurrentToken()
       if (verbose && !cmdOptions.json) {
         console.log(`Using access token: ${accessToken?.substring(0, 10)}...`)
       }
 
-      const response = await axios.post(
+      const response = await httpClient.post(
         `${url}/prompts/${promptId}/versions/${version}`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'cf-access-token': accessToken
-          }
-        }
+        {}
       )
 
       if (cmdOptions.json) {
@@ -587,18 +569,14 @@ program
         console.log(`Created/verified output directory: ${outputDir}`)
       }
 
-      const accessToken = await getAccessToken(url)
+      await initHttpClient(url)
+      const accessToken = getCurrentToken()
       if (verbose && !cmdOptions.json) {
         console.log(`Using access token: ${accessToken?.substring(0, 10)}...`)
       }
 
       // Get all prompts first
-      const response = await axios.get(`${url}/prompts`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'cf-access-token': accessToken
-        }
-      })
+      const response = await httpClient.get(`${url}/prompts`)
 
       if (verbose && !cmdOptions.json) {
         console.log(`Response status: ${response.status}`)
@@ -640,12 +618,7 @@ program
           }
 
           // Get full prompt details
-          const detailResponse = await axios.get(`${url}/prompts/${promptInfo.id}`, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'cf-access-token': accessToken
-            }
-          })
+          const detailResponse = await httpClient.get(`${url}/prompts/${promptInfo.id}`)
 
           if (verbose && !cmdOptions.json) {
             console.log(`Detail response status: ${detailResponse.status}`)

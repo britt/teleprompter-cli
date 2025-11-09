@@ -2,7 +2,7 @@ import { test, expect, describe, beforeEach, mock } from "bun:test"
 import React from 'react'
 import { render } from 'ink-testing-library'
 import { PromptDetail } from './PromptDetail'
-import axios from 'axios'
+import httpClient from '../http-client'
 
 describe("PromptDetail", () => {
   const mockUrl = "http://localhost:3000"
@@ -16,7 +16,7 @@ describe("PromptDetail", () => {
 
   test("renders loading state initially", () => {
     const mockGet = mock(() => new Promise(() => {}))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     const { lastFrame } = render(
       <PromptDetail
@@ -33,7 +33,7 @@ describe("PromptDetail", () => {
 
   test("renders error message when fetch fails", async () => {
     const mockGet = mock(() => Promise.reject(new Error("Not found")))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     const { lastFrame } = render(
       <PromptDetail
@@ -60,7 +60,7 @@ describe("PromptDetail", () => {
     }
 
     const mockGet = mock(() => Promise.resolve({ data: mockPrompt }))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     const { lastFrame } = render(
       <PromptDetail
@@ -84,7 +84,7 @@ describe("PromptDetail", () => {
     const mockGet = mock(() => Promise.resolve({
       data: { id: mockPromptId, namespace: "test", version: 123, prompt: "test", active: true }
     }))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     render(
       <PromptDetail
@@ -98,22 +98,14 @@ describe("PromptDetail", () => {
 
     await new Promise(resolve => setTimeout(resolve, 100))
 
-    expect(mockGet).toHaveBeenCalledWith(
-      `${mockUrl}/prompts/${mockPromptId}`,
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          'Authorization': `Bearer ${mockToken}`,
-          'cf-access-token': mockToken
-        })
-      })
-    )
+    expect(mockGet).toHaveBeenCalledWith(`${mockUrl}/prompts/${mockPromptId}`)
   })
 
   test("displays keyboard navigation instructions", async () => {
     const mockGet = mock(() => Promise.resolve({
       data: { id: mockPromptId, namespace: "test", version: 123, prompt: "test", active: true }
     }))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     const { lastFrame } = render(
       <PromptDetail
@@ -142,7 +134,7 @@ describe("PromptDetail", () => {
     }
 
     const mockGet = mock(() => Promise.resolve({ data: mockPrompt }))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     const { lastFrame } = render(
       <PromptDetail
