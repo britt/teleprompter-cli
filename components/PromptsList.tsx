@@ -35,6 +35,8 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
   const [loading, setLoading] = useState(true)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [scrollOffset, setScrollOffset] = useState(0)
+  const [isFiltering, setIsFiltering] = useState(false)
+  const [filterText, setFilterText] = useState('')
   const [isExporting, setIsExporting] = useState(false)
   const [exportStep, setExportStep] = useState<'pattern' | 'path'>('pattern')
   const [exportPattern, setExportPattern] = useState('*')
@@ -109,13 +111,26 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
 
   // Handle keyboard input
   useInput((input, key) => {
-    // Don't handle normal navigation when exporting or in other views
-    if (isExporting || view !== 'list') {
+    // Don't handle normal navigation when exporting, filtering, or in other views
+    if (isExporting || isFiltering || view !== 'list') {
       return
     }
 
     if (input === 'q') {
       exit()
+      return
+    }
+
+    if (key.escape && filterText) {
+      // Clear filter with ESC
+      setFilterText('')
+      setSelectedIndex(0)
+      setScrollOffset(0)
+      return
+    }
+
+    if (input === 'f' || input === 'F') {
+      setIsFiltering(true)
       return
     }
 
@@ -181,7 +196,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
         return newIndex
       })
     }
-  }, { isActive: !isExporting && view === 'list' })
+  }, { isActive: !isExporting && !isFiltering && view === 'list' })
 
   // Handle pattern submission
   const handlePatternSubmit = () => {
@@ -199,10 +214,32 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
 
   // Handle keyboard input during export
   useInput((input, key) => {
-    if (isExporting && key.ctrl && input === 'b') {
+    if (isExporting && (key.escape || (key.ctrl && input === 'b'))) {
       handleExportCancel()
     }
   }, { isActive: isExporting })
+
+  // Handle filter submit
+  const handleFilterSubmit = () => {
+    setIsFiltering(false)
+    setSelectedIndex(0)
+    setScrollOffset(0)
+  }
+
+  // Handle filter cancel
+  const handleFilterCancel = () => {
+    setIsFiltering(false)
+    setFilterText('')
+    setSelectedIndex(0)
+    setScrollOffset(0)
+  }
+
+  // Handle keyboard input during filtering
+  useInput((input, key) => {
+    if (key.escape || (key.ctrl && input === 'b')) {
+      handleFilterCancel()
+    }
+  }, { isActive: isFiltering })
 
   // Fetch versions for a prompt
   const fetchVersions = async (promptId: string) => {
@@ -701,7 +738,9 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
       <Box flexDirection="column">
         <Text color="red" bold>Error:</Text>
         <Text color="red">{error}</Text>
-        <Text color="gray" dimColor marginTop={1}>Press 'q' to quit</Text>
+        <Box marginTop={1}>
+          <Text color="gray" dimColor>Press 'q' to quit</Text>
+        </Box>
       </Box>
     )
   }
@@ -710,7 +749,9 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
     return (
       <Box flexDirection="column">
         <Text color="yellow">No active prompts found.</Text>
-        <Text color="gray" dimColor marginTop={1}>Press 'q' to quit</Text>
+        <Box marginTop={1}>
+          <Text color="gray" dimColor>Press 'q' to quit</Text>
+        </Box>
       </Box>
     )
   }
@@ -724,8 +765,13 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
     return truncated.padEnd(width, ' ')
   }
 
+  // Filter prompts based on ID prefix if filtering is active
+  const filteredPrompts = filterText
+    ? prompts.filter(p => p.id.toLowerCase().startsWith(filterText.toLowerCase()))
+    : prompts
+
   // Get visible prompts based on scroll offset
-  const visiblePrompts = prompts.slice(scrollOffset, scrollOffset + visibleRows)
+  const visiblePrompts = filteredPrompts.slice(scrollOffset, scrollOffset + visibleRows)
 
   // Fixed column widths - must be consistent for all rows
   const idWidth = 35
@@ -775,13 +821,42 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
     </Box>
   )
 
+  // Show filter input if filtering
+  if (isFiltering) {
+    return (
+      <Box flexDirection="column">
+        <Box marginBottom={1}>
+          <Text color="green" bold>Filter by ID prefix</Text>
+        </Box>
+        <Box marginBottom={1}>
+          <Text color="cyan">Filter: </Text>
+          <TextInput
+            value={filterText}
+            onChange={setFilterText}
+            onSubmit={handleFilterSubmit}
+            placeholder="e.g., my-c"
+          />
+        </Box>
+        <Box>
+          <Text color="gray" dimColor>Press </Text>
+          <Text color="yellow" bold>Enter</Text>
+          <Text color="gray" dimColor> to apply filter, </Text>
+          <Text color="yellow" bold>ESC</Text>
+          <Text color="gray" dimColor> or </Text>
+          <Text color="yellow" bold>Ctrl+B</Text>
+          <Text color="gray" dimColor> to cancel</Text>
+        </Box>
+      </Box>
+    )
+  }
+
   return (
     <Box flexDirection="column" height="100%">
       {/* Fixed header section - pinned at top */}
       <Box flexDirection="column">
         <Box marginBottom={1}>
           <Text color="green" bold>
-            Active Prompts ({prompts.length}) - Use ↑↓ to scroll
+            Active Prompts ({filteredPrompts.length}{filterText ? ` filtered from ${prompts.length}` : ''}) - Use ↑↓ to scroll
           </Text>
         </Box>
 
@@ -826,6 +901,8 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
         </Box>
         <Box paddingX={1}>
           <Text color="cyan" dimColor>Press </Text>
+          <Text color="yellow" bold>f</Text>
+          <Text color="cyan" dimColor> to filter, </Text>
           <Text color="yellow" bold>n</Text>
           <Text color="cyan" dimColor> for new, </Text>
           <Text color="yellow" bold>e</Text>
@@ -839,6 +916,15 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
           <Text color="yellow" bold>q</Text>
           <Text color="cyan" dimColor> to quit</Text>
         </Box>
+        {filterText && (
+          <Box paddingX={1}>
+            <Text color="magenta">Filter active: "{filterText}" - Press </Text>
+            <Text color="yellow" bold>f</Text>
+            <Text color="magenta"> to change or </Text>
+            <Text color="yellow" bold>ESC</Text>
+            <Text color="magenta"> to clear</Text>
+          </Box>
+        )}
         {(exportMessage || rollbackMessage) && (
           <Box paddingX={1}>
             <Text color="green">{exportMessage || rollbackMessage}</Text>

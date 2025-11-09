@@ -1,93 +1,162 @@
 # Teleprompter CLI
 
-This is a command-line interface (CLI) tool designed to work with the [Teleprompter](https://github.com/britt/teleprompter) project. It provides a convenient way to interact with the Teleprompter service, allowing you to manage LLM prompts and update them at runtime.
-
-## Overview
-
-The Teleprompter CLI is built to complement the Teleprompter service, which is a system for managing and versioning prompts for large language models (LLMs). This CLI tool enables users to perform various operations on prompts, such as listing, creating, updating, and rolling back versions, all from the command line.
-
-## Features
-
-- List all active prompts
-- Create new versions of prompts
-- List all versions of a specific prompt
-- Rollback to a specific version of a prompt
-- Fetch a prompt by ID
+A modern CLI for managing LLM prompts with Cloudflare Workers. Features an interactive terminal UI built with [Ink](https://github.com/vadimdemedes/ink) and full scriptability with JSON output.
 
 ## Installation
 
-To install the Teleprompter CLI, follow these steps:
+### Global Installation (Recommended)
 
-1. Clone this repository
-2. Navigate to the project directory
-3. Run `npm install` to install dependencies
-4. Run `npm link` to make the `tp` command available globally
-
-## Building
-
-After installing dependencies you can build the default CLI with:
-
+```bash
+npm install -g teleprompter-cli
 ```
+
+After installation, the `tp` command will be available globally.
+
+### From Source
+
+```bash
+git clone https://github.com/britt/teleprompter-cli.git
+cd teleprompter-cli
+npm install
+npm run build
+npm link
+```
+
+## Features
+
+### Interactive Terminal UI
+
+- **Beautiful Ink-based interface**: React-powered terminal UI
+- **Browse prompts**: Scrollable list with keyboard navigation
+- **View details**: Full prompt information with version history
+- **Rollback versions**: Restore previous versions of prompts
+- **Create prompts**: Multi-step form for creating new prompts
+- **Keyboard controls**:
+  - `↑/↓` - Navigate lists
+  - `Enter` - Select/view details
+  - `n` - Create new prompt (from list view)
+  - `v` - View versions (from detail view)
+  - `r` - Rollback to version
+  - `ESC/b` - Go back
+  - `q` - Quit
+
+### CLI Commands (Scriptable)
+
+All commands support `--json` flag for machine-readable output:
+
+```bash
+# List all active prompts
+tp list [--json]
+
+# Get a specific prompt
+tp get <promptId> [--json]
+
+# Create or update a prompt
+tp put <name> <namespace> [text] [--json]
+# Or pipe from stdin:
+echo "prompt text" | tp put <name> <namespace> --json
+
+# List versions of a prompt
+tp versions <promptId> [--json]
+
+# Rollback to a specific version
+tp rollback <promptId> <version> [--json]
+
+# Export prompts matching a pattern
+tp export <pattern> [--out <directory>] [--json]
+# Example: tp export "prod-*" --out ./backups
+
+# Import prompts from JSON files
+tp import <files...> [--json]
+# Example: tp import prompt1.json prompt2.json
+```
+
+### Configuration
+
+Set the Teleprompter service URL:
+
+```bash
+# Via environment variable (recommended)
+export TP_URL=https://your-teleprompter-service.com
+
+# Or use --url flag
+tp list --url https://your-teleprompter-service.com
+```
+
+### Authentication
+
+The CLI uses Cloudflare Access for authentication:
+
+- For localhost development: Uses a default token
+- For remote URLs: Uses `cloudflared access login` to authenticate
+- Tokens are cached in `~/.teleprompter/token`
+
+## Development
+
+### Requirements
+
+- Node.js >= 18.0.0
+- [Bun](https://bun.sh) (for development/testing)
+
+### Setup
+
+```bash
+npm install
 npm run build
 ```
 
-The Ink-based version is built separately:
+### Scripts
 
-```
-npm run build:ink
-```
-
-## Usage
-
-The general syntax for using the Teleprompter CLI is:
-
-```
-tp <command> [options]
+```bash
+npm run build     # Compile TypeScript to JavaScript
+npm run dev       # Watch mode for development
+npm test          # Run test suite (56 tests)
+npm start         # Run the CLI
 ```
 
-Here are some example commands:
+### Testing
 
-- List all prompts:
-  ```
-  tp list --url https://your-teleprompter-service-url.com
-  ```
+The project includes a comprehensive test suite with 56 tests covering:
 
-- Create a new version of a prompt:
-  ```
-  tp put myPrompt "This is the new prompt text" --url https://your-teleprompter-service-url.com
-  ```
+- Authentication and token management
+- All CLI commands and flags
+- React components (PromptsList, PromptDetail, NewPromptForm)
+- JSON output formatting
+- Error handling
 
-- List all versions of a prompt:
-  ```
-  tp versions myPrompt --url https://your-teleprompter-service-url.com
-  ```
+```bash
+npm test          # Run all tests
+npm test -- --coverage  # Run with coverage report
+```
 
-- Rollback to a specific version:
-  ```
-  tp rollback myPrompt 2 --url https://your-teleprompter-service-url.com
-  ```
+## Architecture
 
-- Fetch a prompt by ID:
-  ```
-  tp get myPrompt --url https://your-teleprompter-service-url.com
-  ```
+- **Runtime**: Node.js (TypeScript compiled to JavaScript)
+- **UI Framework**: Ink (React for CLIs)
+- **CLI Framework**: Commander.js
+- **HTTP Client**: Axios
+- **Testing**: Bun test + ink-testing-library
 
-## Authentication
+## Project Structure
 
-The CLI supports authentication with Cloudflare Access for secure communication with the Teleprompter service. For local development, it uses a default token.
-
-## Cloudflare Warp Access Control
-
-Teleprompter has no authentication system of its own. It uses Cloudflare Warp for access control. The authentication token retrieved from Cloudflare is stored in `$HOME/.teleprompter/token`. The token file permissions are set to 0600 to ensure it is private to the owner.
-
-## Contributing
-
-Contributions to the Teleprompter CLI are welcome! Please feel free to submit pull requests or create issues for bugs and feature requests.
+```
+teleprompter-cli/
+├── dist/                  # Compiled JavaScript (generated)
+├── components/            # React components for UI
+│   ├── PromptsList.tsx
+│   ├── PromptDetail.tsx
+│   └── NewPromptForm.tsx
+├── index.ts              # Main CLI entry point
+├── auth.ts               # Authentication module
+├── *.test.ts(x)          # Test files
+├── package.json          # NPM package configuration
+└── tsconfig.json         # TypeScript configuration
+```
 
 ## License
 
-This project is licensed under the MIT License. The full license text can be found in the [LICENSE](LICENSE) file in the root directory of this repository.
+MIT © Britt Crawford
 
-## Related Projects
+## Contributing
 
-- [Teleprompter Service](https://github.com/britt/teleprompter): The backend service that this CLI interacts with.
+Issues and pull requests welcome at https://github.com/britt/teleprompter-cli

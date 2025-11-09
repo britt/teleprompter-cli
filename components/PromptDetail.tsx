@@ -118,7 +118,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       return
     }
 
-    if (input === 'b' || input === 'B') {
+    if (key.escape || input === 'b' || input === 'B') {
       onBack()
       return
     }
@@ -212,7 +212,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
 
   // Handle keyboard input during export
   useInput((input, key) => {
-    if (isExporting && key.ctrl && input === 'b') {
+    if (isExporting && (key.escape || (key.ctrl && input === 'b'))) {
       handleExportCancel()
     }
   }, { isActive: isExporting })
@@ -309,7 +309,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       return
     }
 
-    if (input === 'b' || input === 'B') {
+    if (key.escape || input === 'b' || input === 'B') {
       setView('detail')
       return
     }
@@ -345,7 +345,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       return
     }
 
-    if (input === 'b' || input === 'B') {
+    if (key.escape || input === 'b' || input === 'B') {
       setView('detail')
       return
     }

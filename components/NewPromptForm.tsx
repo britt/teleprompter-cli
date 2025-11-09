@@ -32,7 +32,7 @@ export const NewPromptForm: React.FC<NewPromptFormProps> = ({
   useInput((input, key) => {
     if (isSubmitting) return
 
-    if (key.ctrl && input === 'b') {
+    if (key.escape || (key.ctrl && input === 'b')) {
       onBack()
       return
     }
@@ -135,7 +135,7 @@ export const NewPromptForm: React.FC<NewPromptFormProps> = ({
         </Text>
       </Box>
       {currentField === 'id' && (
-        <Box marginBottom={1} paddingLeft={2}>
+        <Box marginBottom={1}>
           <TextInput
             value={id}
             onChange={setId}
@@ -154,7 +154,7 @@ export const NewPromptForm: React.FC<NewPromptFormProps> = ({
             </Text>
           </Box>
           {currentField === 'namespace' && (
-            <Box marginBottom={1} paddingLeft={2}>
+            <Box marginBottom={1}>
               <TextInput
                 value={namespace}
                 onChange={setNamespace}
@@ -172,7 +172,7 @@ export const NewPromptForm: React.FC<NewPromptFormProps> = ({
           <Box marginBottom={1}>
             <Text color="cyan" bold>Prompt Text:</Text>
           </Box>
-          <Box marginBottom={1} paddingLeft={2}>
+          <Box marginBottom={1}>
             <TextInput
               value={prompt}
               onChange={setPrompt}
