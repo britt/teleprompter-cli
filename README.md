@@ -40,7 +40,8 @@ npm link
   - `n` - Create new prompt (from list view)
   - `v` - View versions (from detail view)
   - `r` - Rollback to version
-  - `ESC/b` - Go back
+  - `f` - Filter by ID prefix (from list view)
+  - `ESC` / `Ctrl+B` / `b` - Back or cancel
   - `q` - Quit
 
 ### CLI Commands (Scriptable)
