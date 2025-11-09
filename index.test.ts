@@ -11,7 +11,7 @@ const execAsync = promisify(exec)
 async function runCLI(args: string, env: Record<string, string> = {}): Promise<{ stdout: string; stderr: string; exitCode: number | null }> {
   try {
     const { stdout, stderr } = await execAsync(`bun run index.ts ${args}`, {
-      cwd: '/Users/brittcrawford/workspace/teleprompter-cli/v2',
+      cwd: '/Users/brittcrawford/workspace/teleprompter-cli',
       env: { ...process.env, ...env }
     })
     return { stdout, stderr, exitCode: 0 }
