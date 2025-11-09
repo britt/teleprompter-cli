@@ -2,10 +2,7 @@ import { test, expect, describe, beforeEach, mock } from "bun:test"
 import React from 'react'
 import { render } from 'ink-testing-library'
 import { PromptsList } from './PromptsList'
-import axios from 'axios'
-
-// Mock axios
-const mockAxios = mock()
+import httpClient from '../http-client'
 
 describe("PromptsList", () => {
   const mockUrl = "http://localhost:3000"
@@ -14,13 +11,12 @@ describe("PromptsList", () => {
 
   beforeEach(() => {
     mockOnSelectPrompt.mockClear()
-    mockAxios.mockClear()
   })
 
   test("renders loading state initially", () => {
-    // Mock axios to return a pending promise
+    // Mock httpClient to return a pending promise
     const mockGet = mock(() => new Promise(() => {}))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     const { lastFrame } = render(
       <PromptsList
@@ -35,9 +31,9 @@ describe("PromptsList", () => {
   })
 
   test("renders error message when fetch fails", async () => {
-    // Mock axios to reject
+    // Mock httpClient to reject
     const mockGet = mock(() => Promise.reject(new Error("Network error")))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     const { lastFrame } = render(
       <PromptsList
@@ -55,9 +51,9 @@ describe("PromptsList", () => {
   })
 
   test("renders empty state when no prompts returned", async () => {
-    // Mock axios to return empty array
+    // Mock httpClient to return empty array
     const mockGet = mock(() => Promise.resolve({ data: [] }))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     const { lastFrame } = render(
       <PromptsList
@@ -81,7 +77,7 @@ describe("PromptsList", () => {
     ]
 
     const mockGet = mock(() => Promise.resolve({ data: mockPrompts }))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     const { lastFrame } = render(
       <PromptsList
@@ -99,9 +95,9 @@ describe("PromptsList", () => {
     expect(lastFrame()).toContain("prompt-2")
   })
 
-  test("makes API call with correct headers", async () => {
+  test("makes API call with correct URL", async () => {
     const mockGet = mock(() => Promise.resolve({ data: [] }))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     render(
       <PromptsList
@@ -115,20 +111,12 @@ describe("PromptsList", () => {
     // Wait for API call
     await new Promise(resolve => setTimeout(resolve, 100))
 
-    expect(mockGet).toHaveBeenCalledWith(
-      `${mockUrl}/prompts`,
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          'Authorization': `Bearer ${mockToken}`,
-          'cf-access-token': mockToken
-        })
-      })
-    )
+    expect(mockGet).toHaveBeenCalledWith(`${mockUrl}/prompts`)
   })
 
   test("displays instructions for keyboard navigation", async () => {
     const mockGet = mock(() => Promise.resolve({ data: [] }))
-    axios.get = mockGet as any
+    httpClient.get = mockGet as any
 
     const { lastFrame } = render(
       <PromptsList
