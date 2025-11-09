@@ -169,4 +169,4 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md). Issues and pull requests welcome at ht
 
 ---
 
-This documentation was written by doc.holiday.
+This documentation was written by [doc.holiday](https://doc.holiday/).
