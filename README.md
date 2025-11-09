@@ -8,6 +8,9 @@ A modern CLI for managing LLM prompts with Cloudflare Workers. Features an inter
 
 ```bash
 npm install -g teleprompter-cli
+tp --help
+tp --version
+tp list --json
 ```
 
 After installation, the `tp` command will be available globally.
