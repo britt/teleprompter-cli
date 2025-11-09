@@ -82,4 +82,13 @@ export async function getAccessToken(url) {
     const newToken = await cloudflareAccessLogin(url);
     return newToken;
 }
+export async function forceReauthenticate(url) {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') {
+        return DEFAULT_LOCAL_TOKEN;
+    }
+    // Force new authentication even if a token exists
+    const newToken = await cloudflareAccessLogin(url);
+    return newToken;
+}
 //# sourceMappingURL=auth.js.map
