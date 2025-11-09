@@ -2,6 +2,8 @@
 
 A modern CLI for managing LLM prompts with Cloudflare Workers. Features an interactive terminal UI built with [Ink](https://github.com/vadimdemedes/ink) and full scriptability with JSON output.
 
+Teleprompter CLI is a command-line interface for interacting with [Teleprompter](https://github.com/britt/teleprompter/). Teleprompter manages prompts for Large Language Model (LLM) applications at runtime on Cloudflare and Cloudflare Workers. It provides versioning, metadata tracking, and runtime editing and updating of prompts.
+
 ## Installation
 
 ### Global Installation (Recommended)
@@ -159,8 +161,8 @@ teleprompter-cli/
 
 ## License
 
-MIT © Britt Crawford
+MIT — see [LICENSE](./LICENSE)
 
 ## Contributing
 
-Issues and pull requests welcome at https://github.com/britt/teleprompter-cli
+See [CONTRIBUTING.md](./CONTRIBUTING.md). Issues and pull requests welcome at https://github.com/britt/teleprompter-cli
