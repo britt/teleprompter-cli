@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# Invoke the built result using npx and node, passing all command line arguments
-npx ts-node src/index.ts "$@"
