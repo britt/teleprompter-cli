@@ -166,3 +166,7 @@ MIT — see [LICENSE](./LICENSE)
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md). Issues and pull requests welcome at https://github.com/britt/teleprompter-cli
+
+---
+
+This documentation was written by doc.holiday.
