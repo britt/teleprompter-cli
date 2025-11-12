@@ -46,6 +46,8 @@ npm link
   - `ESC` / `Ctrl+B` / `b` - Back or cancel
   - `q` - Quit
 
+![Screenshot of the CLI](./assets/tp-cli.png)
+
 ### CLI Commands (Scriptable)
 
 All commands support `--json` flag for machine-readable output:
