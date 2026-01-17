@@ -50,8 +50,14 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.15",
+    "@ai-sdk/google": "^3.0.10",
+    "@ai-sdk/openai": "^3.0.12",
+    "@ai-sdk/openai-compatible": "^2.0.13",
+    "ai": "^6.0.39",
     "axios": "^1.13.2",
     "commander": "^14.0.2",
+    "handlebars": "^4.7.8",
     "ink": "^6.4.0",
     "ink-text-input": "^6.0.0",
     "react": "^19.2.0"
