@@ -9,6 +9,7 @@ interface VariableFormProps {
   onChange: (values: Record<string, unknown>) => void
   focused: boolean
   maxHeight?: number
+  width?: number
 }
 
 export const VariableForm: React.FC<VariableFormProps> = ({
@@ -16,7 +17,8 @@ export const VariableForm: React.FC<VariableFormProps> = ({
   values,
   onChange,
   focused,
-  maxHeight = 15
+  maxHeight = 15,
+  width = 40
 }) => {
   const [focusedIndex, setFocusedIndex] = useState(0)
   const [scrollOffset, setScrollOffset] = useState(0)
@@ -64,45 +66,50 @@ export const VariableForm: React.FC<VariableFormProps> = ({
           const actualIndex = scrollOffset + i
           const isFocused = focused && actualIndex === focusedIndex
           const value = values[variable.name]
+          const isLast = i === visibleVars.length - 1
 
           return (
-            <Box key={variable.name} marginBottom={1}>
-              <Box width={20}>
-                <Text color={isFocused ? "cyan" : undefined}>
-                  {isFocused ? "> " : "  "}
-                  {variable.name}:
-                </Text>
-              </Box>
-              <Box flexGrow={1}>
-                {variable.type === "boolean" ? (
-                  <Text>
-                    [{value ? "x" : " "}] <Text dimColor>(space to toggle)</Text>
+            <React.Fragment key={variable.name}>
+              <Box marginBottom={1}>
+                <Box minWidth={20} marginRight={1}>
+                  <Text color={isFocused ? "cyan" : undefined} bold={isFocused} wrap="truncate">
+                    {variable.name}:
                   </Text>
-                ) : variable.type === "array" ? (
-                  <Box flexDirection="column">
-                    <TextInput
-                      value={Array.isArray(value) ? value.join(", ") : String(value || "")}
-                      onChange={(newValue) => {
-                        const items = newValue.split(",").map(s => s.trim()).filter(Boolean)
-                        onChange({ ...values, [variable.name]: items })
-                      }}
-                      focus={isFocused}
-                      placeholder="item1, item2, ..."
-                    />
-                    <Text dimColor>(comma-separated)</Text>
-                  </Box>
-                ) : (
-                  <TextInput
-                    value={String(value || "")}
-                    onChange={(newValue) => {
-                      onChange({ ...values, [variable.name]: newValue })
-                    }}
-                    focus={isFocused}
-                    placeholder={`Enter ${variable.name}`}
-                  />
-                )}
+                </Box>
+                <Box flexGrow={1} justifyContent="flex-start">
+                  {variable.type === "boolean" ? (
+                    <Text>
+                      [{value ? "x" : " "}] <Text dimColor>(space to toggle)</Text>
+                    </Text>
+                  ) : variable.type === "array" ? (
+                    <Box flexDirection="column" alignItems="flex-start" width="100%">
+                      <TextInput
+                        value={Array.isArray(value) ? value.join(", ") : String(value || "")}
+                        onChange={(newValue) => {
+                          const items = newValue.split(",").map(s => s.trim()).filter(Boolean)
+                          onChange({ ...values, [variable.name]: items })
+                        }}
+                        focus={isFocused}
+                        placeholder="item1, item2, ..."
+                      />
+                      <Text dimColor>(comma-separated)</Text>
+                    </Box>
+                  ) : (
+                    <Box width="100%">
+                      <TextInput
+                        value={String(value || "")}
+                        onChange={(newValue) => {
+                          onChange({ ...values, [variable.name]: newValue })
+                        }}
+                        focus={isFocused}
+                        placeholder={`Enter ${variable.name}`}
+                      />
+                    </Box>
+                  )}
+                </Box>
               </Box>
-            </Box>
+              {!isLast && <Text color="gray" dimColor>{"─".repeat(width)}</Text>}
+            </React.Fragment>
           )
         })}
       </Box>

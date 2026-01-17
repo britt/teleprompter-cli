@@ -621,7 +621,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       {/* Scrollable prompt text section - fixed height */}
       <Box flexDirection="column" height={maxVisibleLines}>
         {visiblePromptLines.map((line, index) => (
-          <Text key={scrollOffset + index} color="white">
+          <Text key={scrollOffset + index}>
             {line || ' '}
           </Text>
         ))}

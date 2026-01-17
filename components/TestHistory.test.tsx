@@ -84,10 +84,10 @@ describe("TestHistory", () => {
       />
     )
 
-    expect(lastFrame()).toContain("View")
-    expect(lastFrame()).toContain("Re-run")
-    expect(lastFrame()).toContain("Delete")
-    expect(lastFrame()).toContain("Back")
+    expect(lastFrame()).toContain("view")
+    expect(lastFrame()).toContain("re-run")
+    expect(lastFrame()).toContain("delete")
+    expect(lastFrame()).toContain("back")
   })
 
   test("shows prompt id in header", () => {

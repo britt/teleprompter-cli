@@ -18,10 +18,8 @@
     "types": ["node"]
   },
   "include": [
-    "index.ts",
-    "auth.ts",
-    "components/**/*.tsx",
-    "test-ui.ts"
+    "*.ts",
+    "components/**/*.tsx"
   ],
   "exclude": [
     "node_modules",

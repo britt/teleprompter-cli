@@ -817,7 +817,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
       <Box width={promptWidth}>
         <Text
           bold={isHeader || isSelected}
-          color={isHeader ? 'cyan' : (isSelected ? 'white' : 'gray')}
+          color={isHeader ? 'cyan' : isSelected ? 'white' : undefined}
         >
           {padText(String(prompt), promptWidth)}
         </Text>

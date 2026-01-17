@@ -25,6 +25,10 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       const existing = groups.get(model.provider) || []
       groups.set(model.provider, [...existing, model])
     }
+    // Reverse model order within each provider
+    for (const [provider, providerModels] of groups) {
+      groups.set(provider, providerModels.reverse())
+    }
     return groups
   }, [models])
 

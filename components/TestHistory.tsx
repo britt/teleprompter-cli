@@ -65,8 +65,15 @@ export const TestHistory: React.FC<TestHistoryProps> = ({
         <Box marginTop={1}>
           <Text dimColor>No test history for this prompt</Text>
         </Box>
-        <Box marginTop={1}>
-          <Text dimColor>[Esc] Back</Text>
+        <Box flexDirection="column" marginTop={1}>
+          <Box>
+            <Text color="gray">{"─".repeat(terminalWidth)}</Text>
+          </Box>
+          <Box paddingX={1}>
+            <Text color="cyan" dimColor>Press </Text>
+            <Text color="yellow" bold>Esc</Text>
+            <Text color="cyan" dimColor> back</Text>
+          </Box>
         </Box>
       </Box>
     )
@@ -114,8 +121,21 @@ export const TestHistory: React.FC<TestHistoryProps> = ({
           )
         })}
       </Box>
-      <Box marginTop={1}>
-        <Text dimColor>[Enter] View  [r] Re-run  [d] Delete  [Esc] Back</Text>
+      <Box flexDirection="column" marginTop={1}>
+        <Box>
+          <Text color="gray">{"─".repeat(terminalWidth)}</Text>
+        </Box>
+        <Box paddingX={1}>
+          <Text color="cyan" dimColor>Press </Text>
+          <Text color="yellow" bold>Enter</Text>
+          <Text color="cyan" dimColor> view </Text>
+          <Text color="yellow" bold>r</Text>
+          <Text color="cyan" dimColor> re-run </Text>
+          <Text color="yellow" bold>d</Text>
+          <Text color="cyan" dimColor> delete </Text>
+          <Text color="yellow" bold>Esc</Text>
+          <Text color="cyan" dimColor> back</Text>
+        </Box>
       </Box>
     </Box>
   )

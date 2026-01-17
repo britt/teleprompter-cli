@@ -1,6 +1,6 @@
 {
   "name": "teleprompter-cli",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Interactive CLI for managing LLM prompts with Cloudflare Workers",
   "type": "module",
   "bin": {
@@ -13,12 +13,11 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc && chmod +x dist/index.js",
-    "dev": "tsc --watch",
+    "build": "bunx --bun tsc && chmod +x dist/index.js",
+    "dev": "bunx --bun tsc --watch",
     "start": "node dist/index.js",
     "test": "bun test",
-    "prepublishOnly": "npm run build",
-    "demo": "bun run test-ui.ts"
+    "prepublishOnly": "bun run build"
   },
   "keywords": [
     "cli",

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react"
-import { Box, Text, useInput, useStdout } from "ink"
+import { Box, Text, useInput, useStdout, useApp } from "ink"
 import { streamText } from "ai"
 import { execSync } from "child_process"
 import { writeFileSync } from "fs"
@@ -18,7 +18,6 @@ import {
 import { saveRun, loadHistory, deleteRun, TestRun } from "../history.js"
 
 type View = "form" | "modelSelect" | "running" | "result" | "history" | "historyDetail"
-type FocusArea = "variables" | "model"
 
 interface ResponseData {
   modelName: string
@@ -62,11 +61,11 @@ export const PromptTestRunner: React.FC<PromptTestRunnerProps> = ({
   onBack
 }) => {
   const { stdout } = useStdout()
+  const { exit } = useApp()
   const terminalWidth = stdout?.columns || 80
 
   // State
   const [view, setView] = useState<View>("form")
-  const [focusArea, setFocusArea] = useState<FocusArea>("variables")
   const [variables, setVariables] = useState<VariableInfo[]>([])
   const [variableValues, setVariableValues] = useState<Record<string, unknown>>({})
   const [models, setModels] = useState<ModelInfo[]>([])
@@ -77,6 +76,7 @@ export const PromptTestRunner: React.FC<PromptTestRunnerProps> = ({
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [history, setHistory] = useState<TestRun[]>([])
   const [selectedHistoryRun, setSelectedHistoryRun] = useState<TestRun | null>(null)
+  const [isEditingVariables, setIsEditingVariables] = useState(false)
 
   // Extract variables from template
   useEffect(() => {
@@ -94,7 +94,21 @@ export const PromptTestRunner: React.FC<PromptTestRunnerProps> = ({
         const allModels = await fetchAllModels()
         setModels(allModels)
         if (allModels.length > 0 && !selectedModel) {
-          setSelectedModel(allModels[0])
+          // Group by provider and reverse to match ModelSelector display order
+          const groups = new Map<string, ModelInfo[]>()
+          for (const model of allModels) {
+            const existing = groups.get(model.provider) || []
+            groups.set(model.provider, [...existing, model])
+          }
+          // Get first provider's models reversed (newest first)
+          const firstProvider = groups.keys().next().value
+          if (firstProvider) {
+            const providerModels = groups.get(firstProvider) || []
+            const reversed = [...providerModels].reverse()
+            if (reversed.length > 0) {
+              setSelectedModel(reversed[0])
+            }
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load models")
@@ -189,28 +203,49 @@ export const PromptTestRunner: React.FC<PromptTestRunnerProps> = ({
       }
       return
     }
+    if (view === "modelSelect") {
+      // Only handle escape here, ModelSelector handles arrow keys and enter
+      if (key.escape) {
+        setView("form")
+      }
+      return
+    }
 
-    if (key.escape) {
+    // When editing variables, only Escape exits edit mode
+    if (isEditingVariables) {
+      if (key.escape) {
+        setIsEditingVariables(false)
+      }
+      return
+    }
+
+    if (key.escape || input === "b" || input === "B") {
       if (view === "running" || view === "result") {
         setView("form")
         setResponses([])
-      } else if (view === "modelSelect") {
-        setView("form")
       } else {
         onBack()
       }
       return
     }
 
+    if (input === "q" || input === "Q") {
+      exit()
+      return
+    }
+
     if (view === "form") {
-      if (input === "r" || input === "R") {
+      if (key.tab || key.return) {
+        // Enter edit mode for variables
+        if (variables.length > 0) {
+          setIsEditingVariables(true)
+        }
+      } else if (input === "r" || input === "R") {
         runTest()
       } else if (input === "m" || input === "M") {
         setView("modelSelect")
       } else if (input === "h" || input === "H") {
         setView("history")
-      } else if (key.tab) {
-        setFocusArea(focusArea === "variables" ? "model" : "variables")
       }
     } else if (view === "result") {
       if (input === "c" || input === "C") {
@@ -265,12 +300,35 @@ export const PromptTestRunner: React.FC<PromptTestRunnerProps> = ({
             <Text>{selectedHistoryRun.output}</Text>
           </Box>
         </Box>
-        <Box marginTop={1}>
-          <Text dimColor>[Esc] Back to history</Text>
+        <Box flexDirection="column" marginTop={1}>
+          <Box>
+            <Text color="gray">{"─".repeat(terminalWidth)}</Text>
+          </Box>
+          <Box paddingX={1}>
+            <Text color="cyan" dimColor>Press </Text>
+            <Text color="yellow" bold>Esc</Text>
+            <Text color="cyan" dimColor> back to history</Text>
+          </Box>
         </Box>
       </Box>
     )
   }
+
+  // Calculate column widths
+  const leftColumnWidth = Math.floor(terminalWidth * 0.6)
+  const rightColumnWidth = terminalWidth - leftColumnWidth - 3 // 3 for separator
+
+  // Calculate available height for content
+  // Reserve: header(1) + error(2) + status(2) + separator(1) + footer separator(1) + footer model(1) + footer controls(1)
+  const terminalHeight = stdout?.rows || 24
+  const contentHeight = Math.max(5, terminalHeight - 8)
+
+  // Split template into lines for display (handle escaped characters)
+  const templateText = (prompt.prompt || '')
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\r/g, '\r')
+  const templateLines = templateText.split('\n')
 
   return (
     <Box flexDirection="column">
@@ -288,38 +346,50 @@ export const PromptTestRunner: React.FC<PromptTestRunnerProps> = ({
         </Box>
       )}
 
-      {/* Template preview */}
-      <Box marginTop={1} flexDirection="column">
-        <Text bold>Template</Text>
-        <Box marginTop={1} borderStyle="single" paddingX={1}>
-          <Text>{prompt.prompt?.slice(0, 200)}{(prompt.prompt?.length || 0) > 200 ? "..." : ""}</Text>
+      {/* Model selector overlay */}
+      {view === "modelSelect" && (
+        <Box marginTop={1} flexDirection="column">
+          <ModelSelector
+            models={models}
+            loading={modelsLoading}
+            selectedModel={selectedModel}
+            onSelect={(model) => {
+              setSelectedModel(model)
+              setView("form")
+            }}
+            focused={true}
+          />
         </Box>
-      </Box>
+      )}
 
-      {/* Main content area */}
-      {(view === "form" || view === "modelSelect") && (
-        <Box marginTop={1} flexDirection="row">
-          {/* Left side: Variables */}
-          <Box flexDirection="column" width="50%">
+      {/* Main content area - two column layout */}
+      {view === "form" && (
+        <Box marginTop={1} flexDirection="row" height={contentHeight}>
+          {/* Left column: Template */}
+          <Box flexDirection="column" width={leftColumnWidth}>
+            <Text bold color="cyan">Template</Text>
+            <Box marginTop={1} flexDirection="column">
+              {templateLines.map((line, index) => (
+                <Text key={index} wrap="wrap">{line || ' '}</Text>
+              ))}
+            </Box>
+          </Box>
+
+          {/* Separator - full height vertical line */}
+          <Box flexDirection="column" paddingX={1}>
+            {Array.from({ length: contentHeight }).map((_, i) => (
+              <Text key={i} color="gray">│</Text>
+            ))}
+          </Box>
+
+          {/* Right column: Variables */}
+          <Box flexDirection="column" width={rightColumnWidth}>
             <VariableForm
               variables={variables}
               values={variableValues}
               onChange={setVariableValues}
-              focused={view === "form" && focusArea === "variables"}
-            />
-          </Box>
-
-          {/* Right side: Model selector */}
-          <Box flexDirection="column" width="50%" paddingLeft={2}>
-            <ModelSelector
-              models={models}
-              loading={modelsLoading}
-              selectedModel={selectedModel}
-              onSelect={(model) => {
-                setSelectedModel(model)
-                setView("form")
-              }}
-              focused={view === "modelSelect"}
+              focused={isEditingVariables}
+              width={rightColumnWidth}
             />
           </Box>
         </Box>
@@ -336,22 +406,80 @@ export const PromptTestRunner: React.FC<PromptTestRunnerProps> = ({
         </Box>
       )}
 
-      {/* Footer with controls */}
-      <Box marginTop={1}>
-        {view === "form" && (
-          <Text dimColor>
-            [r] Run  [m] Select model  [h] History  [Tab] Switch focus  [Esc] Back
-          </Text>
+      {/* Footer separator and controls */}
+      <Box flexDirection="column" marginTop={1}>
+        <Box>
+          <Text color="gray">{"─".repeat(terminalWidth)}</Text>
+        </Box>
+        {/* Model info line */}
+        {view !== "modelSelect" && (
+          <Box paddingX={1}>
+            <Text color="cyan" dimColor>Model: </Text>
+            <Text bold color="yellow">{selectedModel?.displayName || (modelsLoading ? "Loading..." : "None")}</Text>
+          </Box>
         )}
-        {view === "modelSelect" && (
-          <Text dimColor>[Enter] Select  [Esc] Cancel</Text>
-        )}
-        {view === "running" && (
-          <Text dimColor>Running... [Esc] Cancel</Text>
-        )}
-        {view === "result" && (
-          <Text dimColor>[r] Run again  [c] Copy  [s] Save  [Esc] Back to form</Text>
-        )}
+        <Box paddingX={1}>
+          {view === "form" && !isEditingVariables && (
+            <>
+              <Text color="cyan" dimColor>Press </Text>
+              <Text color="yellow" bold>Tab</Text>
+              <Text color="cyan" dimColor> edit vars </Text>
+              <Text color="yellow" bold>r</Text>
+              <Text color="cyan" dimColor> run </Text>
+              <Text color="yellow" bold>m</Text>
+              <Text color="cyan" dimColor> model </Text>
+              <Text color="yellow" bold>h</Text>
+              <Text color="cyan" dimColor> history </Text>
+              <Text color="yellow" bold>b</Text>
+              <Text color="cyan" dimColor> back </Text>
+              <Text color="yellow" bold>q</Text>
+              <Text color="cyan" dimColor> quit</Text>
+            </>
+          )}
+          {view === "form" && isEditingVariables && (
+            <>
+              <Text color="green" bold>Editing variables </Text>
+              <Text color="cyan" dimColor>Press </Text>
+              <Text color="yellow" bold>↑/↓</Text>
+              <Text color="cyan" dimColor> navigate </Text>
+              <Text color="yellow" bold>Esc</Text>
+              <Text color="cyan" dimColor> done</Text>
+            </>
+          )}
+          {view === "modelSelect" && (
+            <>
+              <Text color="cyan" dimColor>Press </Text>
+              <Text color="yellow" bold>↑/↓</Text>
+              <Text color="cyan" dimColor> navigate </Text>
+              <Text color="yellow" bold>Enter</Text>
+              <Text color="cyan" dimColor> select </Text>
+              <Text color="yellow" bold>Esc</Text>
+              <Text color="cyan" dimColor> cancel</Text>
+            </>
+          )}
+          {view === "running" && (
+            <>
+              <Text color="cyan" dimColor>Running... </Text>
+              <Text color="yellow" bold>Esc</Text>
+              <Text color="cyan" dimColor> cancel</Text>
+            </>
+          )}
+          {view === "result" && (
+            <>
+              <Text color="cyan" dimColor>Press </Text>
+              <Text color="yellow" bold>r</Text>
+              <Text color="cyan" dimColor> run again </Text>
+              <Text color="yellow" bold>c</Text>
+              <Text color="cyan" dimColor> copy </Text>
+              <Text color="yellow" bold>s</Text>
+              <Text color="cyan" dimColor> save </Text>
+              <Text color="yellow" bold>b</Text>
+              <Text color="cyan" dimColor> back </Text>
+              <Text color="yellow" bold>q</Text>
+              <Text color="cyan" dimColor> quit</Text>
+            </>
+          )}
+        </Box>
       </Box>
     </Box>
   )

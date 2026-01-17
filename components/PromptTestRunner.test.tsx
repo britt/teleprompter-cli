@@ -51,8 +51,9 @@ describe("PromptTestRunner", () => {
       />
     )
 
-    expect(lastFrame()).toContain("Run")
-    expect(lastFrame()).toContain("Esc")
+    expect(lastFrame()).toContain("run")
+    expect(lastFrame()).toContain("back")
+    expect(lastFrame()).toContain("quit")
   })
 
   test("shows prompt id in header", () => {
