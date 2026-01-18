@@ -119,6 +119,20 @@ npm install
 npm run build
 ```
 
+### UI demo (development)
+
+Run the Ink UI against mock prompt data:
+
+```bash
+bun run test-ui.ts
+```
+
+Controls shown by the demo:
+
+- `↑/↓` - Navigate through prompts
+- `q` - Quit
+
+
 ### Scripts
 
 ```bash
