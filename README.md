@@ -43,6 +43,7 @@ npm link
   - `v` - View versions (from detail view)
   - `r` - Rollback to version
   - `f` - Filter by ID prefix (from list view)
+    - `ESC` clears the active filter
   - `ESC` / `Ctrl+B` / `b` - Back or cancel
   - `q` - Quit
 
