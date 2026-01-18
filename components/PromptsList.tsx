@@ -5,6 +5,7 @@ import httpClient from '../http-client.js'
 import * as path from 'path'
 import { promises as fsPromises } from 'fs'
 import { NewPromptForm } from './NewPromptForm.js'
+import { PromptTestRunner } from './PromptTestRunner.js'
 
 export interface Prompt {
   id: string
@@ -42,7 +43,8 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
   const [exportPattern, setExportPattern] = useState('*')
   const [exportPath, setExportPath] = useState('./')
   const [exportMessage, setExportMessage] = useState<string | null>(null)
-  const [view, setView] = useState<'list' | 'versions' | 'rollback' | 'new'>('list')
+  const [view, setView] = useState<'list' | 'versions' | 'rollback' | 'new' | 'test'>('list')
+  const [testPrompt, setTestPrompt] = useState<Prompt | null>(null)
   const [versions, setVersions] = useState<PromptVersion[] | null>(null)
   const [versionsLoading, setVersionsLoading] = useState(false)
   const [selectedVersionIndex, setSelectedVersionIndex] = useState(0)
@@ -138,6 +140,25 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
 
     if (input === 'n' || input === 'N') {
       setView('new')
+      return
+    }
+
+    if (input === 't' || input === 'T') {
+      const filteredPrompts = filterText
+        ? prompts?.filter(p => p.id.toLowerCase().startsWith(filterText.toLowerCase()))
+        : prompts
+      const selectedPrompt = filteredPrompts?.[selectedIndex]
+      if (selectedPrompt) {
+        // Fetch full prompt details including prompt text
+        httpClient.get(`${url}/prompts/${selectedPrompt.id}`).then((response) => {
+          setTestPrompt(response.data)
+          setView('test')
+        }).catch(() => {
+          // If fetch fails, use what we have
+          setTestPrompt(selectedPrompt)
+          setView('test')
+        })
+      }
       return
     }
 
@@ -454,6 +475,20 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
         console.error('Error refreshing prompts:', err instanceof Error ? err.message : 'Unknown error')
       }
     }
+  }
+
+  // Show test runner
+  if (view === 'test' && testPrompt) {
+    return (
+      <PromptTestRunner
+        prompt={testPrompt}
+        url={url}
+        onBack={() => {
+          setView('list')
+          setTestPrompt(null)
+        }}
+      />
+    )
   }
 
   // Show new prompt form
@@ -782,7 +817,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
       <Box width={promptWidth}>
         <Text
           bold={isHeader || isSelected}
-          color={isHeader ? 'cyan' : (isSelected ? 'white' : 'gray')}
+          color={isHeader ? 'cyan' : isSelected ? 'white' : undefined}
         >
           {padText(String(prompt), promptWidth)}
         </Text>
@@ -871,19 +906,21 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
         <Box paddingX={1}>
           <Text color="cyan" dimColor>Press </Text>
           <Text color="yellow" bold>f</Text>
-          <Text color="cyan" dimColor> to filter, </Text>
+          <Text color="cyan" dimColor> filter </Text>
           <Text color="yellow" bold>n</Text>
-          <Text color="cyan" dimColor> for new, </Text>
+          <Text color="cyan" dimColor> new </Text>
+          <Text color="yellow" bold>t</Text>
+          <Text color="cyan" dimColor> test </Text>
           <Text color="yellow" bold>e</Text>
-          <Text color="cyan" dimColor> to export, </Text>
+          <Text color="cyan" dimColor> export </Text>
           <Text color="yellow" bold>v</Text>
-          <Text color="cyan" dimColor> for versions, </Text>
+          <Text color="cyan" dimColor> versions </Text>
           <Text color="yellow" bold>r</Text>
-          <Text color="cyan" dimColor> to rollback, </Text>
+          <Text color="cyan" dimColor> rollback </Text>
           <Text color="yellow" bold>Enter</Text>
-          <Text color="cyan" dimColor> for details, </Text>
+          <Text color="cyan" dimColor> details </Text>
           <Text color="yellow" bold>q</Text>
-          <Text color="cyan" dimColor> to quit</Text>
+          <Text color="cyan" dimColor> quit</Text>
         </Box>
         {filterText && (
           <Box paddingX={1}>

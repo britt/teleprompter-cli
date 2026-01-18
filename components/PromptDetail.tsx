@@ -3,6 +3,7 @@ import { Box, Text, useInput, useApp, useStdout } from 'ink'
 import TextInput from 'ink-text-input'
 import httpClient from '../http-client.js'
 import { Prompt } from './PromptsList.js'
+import { PromptTestRunner } from './PromptTestRunner.js'
 import * as path from 'path'
 import { promises as fsPromises } from 'fs'
 
@@ -36,7 +37,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
   const [exportMessage, setExportMessage] = useState<string | null>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [exportPath, setExportPath] = useState('')
-  const [view, setView] = useState<'detail' | 'versions' | 'rollback'>('detail')
+  const [view, setView] = useState<'detail' | 'versions' | 'rollback' | 'test'>('detail')
   const [versions, setVersions] = useState<PromptVersion[] | null>(null)
   const [versionsLoading, setVersionsLoading] = useState(false)
   const [selectedVersionIndex, setSelectedVersionIndex] = useState(0)
@@ -136,6 +137,13 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
     if (input === 'r' || input === 'R') {
       setView('rollback')
       fetchVersions()
+      return
+    }
+
+    if (input === 't' || input === 'T') {
+      if (prompt) {
+        setView('test')
+      }
       return
     }
 
@@ -346,6 +354,17 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       }
     }
   }, { isActive: view === 'rollback' })
+
+  // Show test runner
+  if (view === 'test' && prompt) {
+    return (
+      <PromptTestRunner
+        prompt={prompt}
+        url={url}
+        onBack={() => setView('detail')}
+      />
+    )
+  }
 
   // Show versions view
   if (view === 'versions') {
@@ -602,7 +621,7 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       {/* Scrollable prompt text section - fixed height */}
       <Box flexDirection="column" height={maxVisibleLines}>
         {visiblePromptLines.map((line, index) => (
-          <Text key={scrollOffset + index} color="white">
+          <Text key={scrollOffset + index}>
             {line || ' '}
           </Text>
         ))}
@@ -623,16 +642,18 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
             </>
           )}
           <Text color="cyan" dimColor>Press </Text>
+          <Text color="yellow" bold>t</Text>
+          <Text color="cyan" dimColor> test </Text>
           <Text color="yellow" bold>e</Text>
-          <Text color="cyan" dimColor> to export, </Text>
+          <Text color="cyan" dimColor> export </Text>
           <Text color="yellow" bold>v</Text>
-          <Text color="cyan" dimColor> for versions, </Text>
+          <Text color="cyan" dimColor> versions </Text>
           <Text color="yellow" bold>r</Text>
-          <Text color="cyan" dimColor> to rollback, </Text>
+          <Text color="cyan" dimColor> rollback </Text>
           <Text color="yellow" bold>b</Text>
-          <Text color="cyan" dimColor> to go back, </Text>
+          <Text color="cyan" dimColor> back </Text>
           <Text color="yellow" bold>q</Text>
-          <Text color="cyan" dimColor> to quit</Text>
+          <Text color="cyan" dimColor> quit</Text>
         </Box>
         {(exportMessage || rollbackMessage) && (
           <Box paddingX={1}>
