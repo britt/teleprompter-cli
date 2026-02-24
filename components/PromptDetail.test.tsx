@@ -187,6 +187,52 @@ describe("PromptDetail", () => {
     expect(frame).toContain("search")
   })
 
+  test("shows model per version in history", async () => {
+    const mockPrompt = {
+      id: "test-prompt",
+      namespace: "test-namespace",
+      version: 1234567891,
+      prompt: "Hello",
+      metadata: { model: "openai/gpt-4o" }
+    }
+
+    const mockVersions = [
+      { id: "test-prompt", namespace: "test-namespace", version: 1234567891, metadata: { model: "openai/gpt-4o" } },
+      { id: "test-prompt", namespace: "test-namespace", version: 1234567890, metadata: { model: "anthropic/claude-sonnet-4-20250514" } }
+    ]
+
+    const mockGet = mock((url: string) => {
+      if (url.includes('/versions')) {
+        return Promise.resolve({ data: mockVersions })
+      }
+      return Promise.resolve({ data: mockPrompt })
+    })
+    httpClient.get = mockGet as any
+
+    const { lastFrame, stdin } = render(
+      <PromptDetail
+        promptId="test-prompt"
+        url={mockUrl}
+        token={mockToken}
+        onBack={mockOnBack}
+        verbose={false}
+      />
+    )
+
+    // Wait for prompt to load
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Press 'v' to switch to versions view
+    stdin.write("v")
+
+    // Wait for versions to load
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    const frame = lastFrame()
+    expect(frame).toContain("openai/gpt-4o")
+    expect(frame).toContain("anthropic/claude-sonnet-4-20250514")
+  })
+
   test("does not show metadata section for plain prompts", async () => {
     const mockPrompt = {
       id: "test-prompt",

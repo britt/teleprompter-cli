@@ -171,7 +171,8 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       const exportData = {
         id: promptToExport.id,
         namespace: promptToExport.namespace,
-        prompt: promptToExport.prompt
+        prompt: promptToExport.prompt,
+        metadata: promptToExport.metadata || {},
       }
 
       await fsPromises.writeFile(
@@ -417,6 +418,9 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
                 {isCurrent && (
                   <Text bold color="green"> (current)</Text>
                 )}
+                {v.metadata?.model && (
+                  <Text color="green"> [{v.metadata.model}]</Text>
+                )}
               </Box>
             )
           })}
@@ -486,6 +490,9 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
                 </Text>
                 {isCurrent && (
                   <Text bold color="green"> (current)</Text>
+                )}
+                {v.metadata?.model && (
+                  <Text color="green"> [{v.metadata.model}]</Text>
                 )}
               </Box>
             )
