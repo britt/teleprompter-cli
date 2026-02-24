@@ -9,7 +9,7 @@ import { ModelSelector } from "./ModelSelector.js"
 import { ResponsePanel } from "./ResponsePanel.js"
 import { ComparisonView } from "./ComparisonView.js"
 import { TestHistory } from "./TestHistory.js"
-import { extractVariables, compileTemplate, VariableInfo } from "../template-parser.js"
+import { extractVariables, compileTemplate, stripFrontmatter, VariableInfo } from "../template-parser.js"
 import {
   createProvider,
   fetchAllModels,
@@ -324,7 +324,7 @@ export const PromptTestRunner: React.FC<PromptTestRunnerProps> = ({
   const contentHeight = Math.max(5, terminalHeight - 8)
 
   // Split template into lines for display (handle escaped characters)
-  const templateText = (prompt.prompt || '')
+  const templateText = stripFrontmatter(prompt.prompt || '')
     .replace(/\\n/g, '\n')
     .replace(/\\t/g, '\t')
     .replace(/\\r/g, '\r')
