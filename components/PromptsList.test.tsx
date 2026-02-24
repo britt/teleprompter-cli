@@ -114,6 +114,54 @@ describe("PromptsList", () => {
     expect(mockGet).toHaveBeenCalledWith(`${mockUrl}/prompts`)
   })
 
+  test("displays model name from metadata in list view", async () => {
+    const mockPrompts = [
+      {
+        id: "dotprompt-1",
+        namespace: "dotprompt",
+        version: 1,
+        prompt: "Hello {{name}}",
+        metadata: { model: "claude-3-opus" }
+      },
+      {
+        id: "plain-prompt",
+        namespace: "test",
+        version: 1,
+        prompt: "Just a plain prompt"
+      },
+      {
+        id: "empty-meta",
+        namespace: "test",
+        version: 1,
+        prompt: "Has empty metadata",
+        metadata: {}
+      }
+    ]
+
+    const mockGet = mock(() => Promise.resolve({ data: mockPrompts }))
+    httpClient.get = mockGet as any
+
+    const { lastFrame } = render(
+      <PromptsList
+        url={mockUrl}
+        token={mockToken}
+        verbose={false}
+        onSelectPrompt={mockOnSelectPrompt}
+      />
+    )
+
+    // Wait for data to load
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    const frame = lastFrame()
+    // Model header should be present
+    expect(frame).toContain("Model")
+    // Prompt with metadata.model should show the model name
+    expect(frame).toContain("claude-3-opus")
+    // Prompts without a model should show em dash
+    expect(frame).toContain("\u2014")
+  })
+
   test("displays instructions for keyboard navigation", async () => {
     const mockGet = mock(() => Promise.resolve({ data: [] }))
     httpClient.get = mockGet as any
