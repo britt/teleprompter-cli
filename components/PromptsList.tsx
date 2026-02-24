@@ -6,14 +6,9 @@ import * as path from 'path'
 import { promises as fsPromises } from 'fs'
 import { NewPromptForm } from './NewPromptForm.js'
 import { PromptTestRunner } from './PromptTestRunner.js'
+import type { Prompt } from '../prompt-types.js'
 
-export interface Prompt {
-  id: string
-  namespace: string
-  version: number
-  prompt?: string
-  created_at?: string
-}
+export type { Prompt } from '../prompt-types.js'
 
 interface PromptVersion {
   id: string

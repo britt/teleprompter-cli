@@ -3,6 +3,7 @@ import { Box, Text, useInput, useApp, useStdout } from 'ink'
 import TextInput from 'ink-text-input'
 import httpClient from '../http-client.js'
 import { Prompt } from './PromptsList.js'
+import type { PromptMetadata } from '../prompt-types.js'
 import { PromptTestRunner } from './PromptTestRunner.js'
 import * as path from 'path'
 import { promises as fsPromises } from 'fs'
@@ -13,6 +14,7 @@ interface PromptVersion {
   version: number
   created_at?: string
   prompt?: string
+  metadata?: PromptMetadata
 }
 
 interface PromptDetailProps {
