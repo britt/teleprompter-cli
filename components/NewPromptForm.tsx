@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Box, Text, useInput, useApp } from 'ink'
 import TextInput from 'ink-text-input'
+import axios from 'axios'
 import httpClient from '../http-client.js'
 
 interface NewPromptFormProps {
@@ -99,11 +100,19 @@ export const NewPromptForm: React.FC<NewPromptFormProps> = ({
       // Success - go back to list
       onSuccess()
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error'
-      setErrorMessage(`Failed to create prompt: ${errorMsg}`)
+      if (axios.isAxiosError(err) && err.response?.status === 400 && err.response?.data?.error) {
+        const msg = err.response.data.detail
+          ? `${err.response.data.error}: ${err.response.data.detail}`
+          : err.response.data.error
+        setErrorMessage(`Validation error: ${msg}`)
+      } else {
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+        setErrorMessage(`Failed to create prompt: ${errorMsg}`)
+      }
       setIsSubmitting(false)
 
       if (verbose) {
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error'
         console.error('Error creating prompt:', errorMsg)
       }
 

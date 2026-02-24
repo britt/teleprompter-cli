@@ -381,24 +381,37 @@ program
         console.log(`Successfully created prompt: ${promptName}`)
       }
     } catch (error) {
-      if (cmdOptions.json) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error(JSON.stringify({ error: errorMsg }))
-      } else {
-        if (axios.isAxiosError(error)) {
-          console.error('Error creating prompt:', error.message)
-          if (error.response) {
-            console.error('Response status:', error.response.status)
-            console.error('Response data:', error.response.data)
-          }
-        } else if (error instanceof Error) {
-          console.error('Error creating prompt:', error.message)
-          if (verbose) {
-            console.error(`Stack trace: ${error.stack}`)
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 400 && error.response?.data?.error) {
+          const msg = error.response.data.detail
+            ? `${error.response.data.error}: ${error.response.data.detail}`
+            : error.response.data.error
+          if (cmdOptions.json) {
+            console.error(JSON.stringify({ error: msg }))
+          } else {
+            console.error(`Validation error: ${msg}`)
           }
         } else {
-          console.error('An unknown error occurred while creating the prompt')
+          if (cmdOptions.json) {
+            console.error(JSON.stringify({ error: error.message }))
+          } else {
+            console.error('Error creating prompt:', error.message)
+            if (error.response) {
+              console.error('Response status:', error.response.status)
+              console.error('Response data:', error.response.data)
+            }
+          }
         }
+      } else if (cmdOptions.json) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        console.error(JSON.stringify({ error: errorMsg }))
+      } else if (error instanceof Error) {
+        console.error('Error creating prompt:', error.message)
+        if (verbose) {
+          console.error(`Stack trace: ${error.stack}`)
+        }
+      } else {
+        console.error('An unknown error occurred while creating the prompt')
       }
       process.exit(1)
     }
