@@ -209,13 +209,24 @@ program
                 console.log(`Successfully imported prompt: ${prompt.id}`)
               }
             } catch (error) {
-              const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-              if (cmdOptions.json) {
-                results.push({ success: false, file, promptId: prompt.id, error: errorMsg })
+              if (axios.isAxiosError(error) && error.response?.status === 400 && error.response?.data?.error) {
+                const msg = error.response.data.detail
+                  ? `${error.response.data.error}: ${error.response.data.detail}`
+                  : error.response.data.error
+                if (cmdOptions.json) {
+                  results.push({ success: false, file, promptId: prompt.id, error: msg })
+                } else {
+                  console.error(`Validation error for ${prompt.id}: ${msg}`)
+                }
               } else {
-                console.error(`Error importing prompt ${prompt.id}:`, errorMsg)
-                if (verbose && error instanceof Error) {
-                  console.error(`Stack trace: ${error.stack}`)
+                const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+                if (cmdOptions.json) {
+                  results.push({ success: false, file, promptId: prompt.id, error: errorMsg })
+                } else {
+                  console.error(`Error importing prompt ${prompt.id}:`, errorMsg)
+                  if (verbose && error instanceof Error) {
+                    console.error(`Stack trace: ${error.stack}`)
+                  }
                 }
               }
             }
@@ -650,7 +661,8 @@ program
           const exportData = {
             id: prompt.id,
             namespace: prompt.namespace,
-            prompt: prompt.prompt
+            prompt: prompt.prompt,
+            metadata: prompt.metadata || {},
           }
 
           await fsPromises.writeFile(
