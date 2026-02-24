@@ -6,7 +6,7 @@ import * as path from 'path'
 import { promises as fsPromises } from 'fs'
 import { NewPromptForm } from './NewPromptForm.js'
 import { PromptTestRunner } from './PromptTestRunner.js'
-import type { Prompt } from '../prompt-types.js'
+import type { Prompt, PromptMetadata } from '../prompt-types.js'
 
 export type { Prompt } from '../prompt-types.js'
 
@@ -16,6 +16,7 @@ interface PromptVersion {
   version: number
   created_at?: string
   prompt?: string
+  metadata?: PromptMetadata
 }
 
 interface PromptsListProps {
@@ -422,7 +423,8 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
           const exportData = {
             id: prompt.id,
             namespace: prompt.namespace,
-            prompt: prompt.prompt
+            prompt: prompt.prompt,
+            metadata: prompt.metadata || {},
           }
 
           await fsPromises.writeFile(
@@ -775,18 +777,20 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
   // Fixed column widths - must be consistent for all rows
   const idWidth = 35
   const namespaceWidth = 25
+  const modelWidth = 30
   const versionWidth = 15
-  const promptWidth = 60
+  const promptWidth = 35
 
   // Helper component for table row
   const TableRow: React.FC<{
     id: string
     namespace: string
+    model: string
     version: string | number
     prompt: string
     isSelected?: boolean
     isHeader?: boolean
-  }> = ({ id, namespace, version, prompt, isSelected = false, isHeader = false }) => (
+  }> = ({ id, namespace, model, version, prompt, isSelected = false, isHeader = false }) => (
     <Box backgroundColor={isSelected && !isHeader ? 'blue' : undefined}>
       <Box width={idWidth}>
         <Text bold={isHeader || isSelected} color={isHeader ? 'cyan' : undefined}>
@@ -799,6 +803,14 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
           color={isHeader ? 'cyan' : (isSelected ? 'white' : 'magenta')}
         >
           {padText(String(namespace), namespaceWidth)}
+        </Text>
+      </Box>
+      <Box width={modelWidth}>
+        <Text
+          bold={isHeader || isSelected}
+          color={isHeader ? 'cyan' : (isSelected ? 'white' : 'gray')}
+        >
+          {padText(String(model), modelWidth)}
         </Text>
       </Box>
       <Box width={versionWidth}>
@@ -863,6 +875,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
         <TableRow
           id="ID"
           namespace="Namespace"
+          model="Model"
           version="Version"
           prompt="Prompt"
           isHeader={true}
@@ -870,7 +883,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
 
         {/* Separator */}
         <Box>
-          <Text color="gray">{'─'.repeat(idWidth + namespaceWidth + versionWidth + promptWidth)}</Text>
+          <Text color="gray">{'─'.repeat(idWidth + namespaceWidth + modelWidth + versionWidth + promptWidth)}</Text>
         </Box>
       </Box>
 
@@ -885,6 +898,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
               key={`${prompt.id}-${actualIndex}`}
               id={prompt.id}
               namespace={prompt.namespace}
+              model={prompt.metadata?.model || '\u2014'}
               version={prompt.version}
               prompt={prompt.prompt || ''}
               isSelected={isSelected}
@@ -896,7 +910,7 @@ export const PromptsList: React.FC<PromptsListProps> = ({ url, token, verbose = 
       {/* Fixed footer - pinned at bottom */}
       <Box flexDirection="column">
         <Box>
-          <Text color="gray">{'─'.repeat(idWidth + namespaceWidth + versionWidth + promptWidth)}</Text>
+          <Text color="gray">{'─'.repeat(idWidth + namespaceWidth + modelWidth + versionWidth + promptWidth)}</Text>
         </Box>
         <Box paddingX={1}>
           <Text color="cyan" dimColor>Press </Text>
