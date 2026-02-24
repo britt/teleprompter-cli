@@ -151,4 +151,65 @@ describe("PromptDetail", () => {
     const frame = lastFrame()
     expect(frame).toContain("version")
   })
+
+  test("displays metadata when present", async () => {
+    const mockPrompt = {
+      id: "test-prompt",
+      namespace: "test-namespace",
+      version: 1234567890,
+      prompt: "---\\nmodel: anthropic/claude-sonnet-4-20250514\\n---\\nHello {{name}}",
+      metadata: {
+        model: "anthropic/claude-sonnet-4-20250514",
+        description: "A test prompt",
+        config: { temperature: 0.3 },
+        tools: ["search", "fetch"]
+      }
+    }
+    const mockGet = mock(() => Promise.resolve({ data: mockPrompt }))
+    httpClient.get = mockGet as any
+
+    const { lastFrame } = render(
+      <PromptDetail
+        promptId="test-prompt"
+        url={mockUrl}
+        token={mockToken}
+        onBack={mockOnBack}
+        verbose={false}
+      />
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    const frame = lastFrame()
+    expect(frame).toContain("Metadata")
+    expect(frame).toContain("anthropic/claude-sonnet-4-20250514")
+    expect(frame).toContain("A test prompt")
+    expect(frame).toContain("search")
+  })
+
+  test("does not show metadata section for plain prompts", async () => {
+    const mockPrompt = {
+      id: "test-prompt",
+      namespace: "test-namespace",
+      version: 1234567890,
+      prompt: "Hello {{name}}",
+      metadata: {}
+    }
+    const mockGet = mock(() => Promise.resolve({ data: mockPrompt }))
+    httpClient.get = mockGet as any
+
+    const { lastFrame } = render(
+      <PromptDetail
+        promptId="test-prompt"
+        url={mockUrl}
+        token={mockToken}
+        onBack={mockOnBack}
+        verbose={false}
+      />
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    expect(lastFrame()).not.toContain("Metadata")
+  })
 })

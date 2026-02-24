@@ -614,6 +614,31 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
           )}
         </Box>
 
+        {/* Metadata panel */}
+        {prompt.metadata && Object.keys(prompt.metadata).length > 0 && (
+          <Box flexDirection="column" marginTop={1}>
+            <Text bold color="cyan">Metadata</Text>
+            {prompt.metadata.model && (
+              <Text>  Model: <Text color="green">{prompt.metadata.model}</Text></Text>
+            )}
+            {prompt.metadata.description && (
+              <Text>  Description: {prompt.metadata.description}</Text>
+            )}
+            {prompt.metadata.config && (
+              <Text>  Config: {JSON.stringify(prompt.metadata.config)}</Text>
+            )}
+            {prompt.metadata.tools && prompt.metadata.tools.length > 0 && (
+              <Text>  Tools: {prompt.metadata.tools.join(", ")}</Text>
+            )}
+            {prompt.metadata.input?.schema && (
+              <Text>  Input Schema: {JSON.stringify(prompt.metadata.input.schema)}</Text>
+            )}
+            {prompt.metadata.output && (
+              <Text>  Output: {prompt.metadata.output.format || "text"}{prompt.metadata.output.schema ? ` — ${JSON.stringify(prompt.metadata.output.schema)}` : ""}</Text>
+            )}
+          </Box>
+        )}
+
         {/* Separator */}
         <Box>
           <Text color="gray">{'─'.repeat(terminalWidth)}</Text>
