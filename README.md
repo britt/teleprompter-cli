@@ -113,7 +113,7 @@ Summarize this conversation:
 {{transcript}}
 ```
 
-Plain prompts without frontmatter still work. Prompts without model metadata simply leave the model value blank in places such as the prompt list.
+Plain prompts without frontmatter still work. Prompts without model metadata simply leave the model value blank in the list.
 
 `tp export` writes JSON files that include `id`, `namespace`, `prompt`, and `metadata`. `tp import` preserves that metadata when those files move out and back in.
 
