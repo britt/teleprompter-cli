@@ -100,4 +100,27 @@ describe("PromptTestRunner", () => {
     stdin.write("\x1B") // Escape key
     expect(onBack).toHaveBeenCalled()
   })
+
+  test("displays template body without frontmatter", () => {
+    const dotpromptPrompt: Prompt = {
+      id: "test-prompt",
+      namespace: "test-ns",
+      version: 1234567890,
+      prompt: "---\nmodel: anthropic/claude-sonnet-4-20250514\n---\nHello {{name}}"
+    }
+
+    const { lastFrame } = render(
+      <PromptTestRunner
+        prompt={dotpromptPrompt}
+        url="http://localhost"
+        onBack={() => {}}
+      />
+    )
+
+    const frame = lastFrame()
+    // The template body should be visible
+    expect(frame).toContain("Hello")
+    // The frontmatter metadata should NOT appear in the template display
+    expect(frame).not.toContain("model: anthropic")
+  })
 })

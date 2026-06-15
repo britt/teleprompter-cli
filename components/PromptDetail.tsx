@@ -3,6 +3,7 @@ import { Box, Text, useInput, useApp, useStdout } from 'ink'
 import TextInput from 'ink-text-input'
 import httpClient from '../http-client.js'
 import { Prompt } from './PromptsList.js'
+import type { PromptMetadata } from '../prompt-types.js'
 import { PromptTestRunner } from './PromptTestRunner.js'
 import * as path from 'path'
 import { promises as fsPromises } from 'fs'
@@ -13,6 +14,7 @@ interface PromptVersion {
   version: number
   created_at?: string
   prompt?: string
+  metadata?: PromptMetadata
 }
 
 interface PromptDetailProps {
@@ -169,7 +171,8 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
       const exportData = {
         id: promptToExport.id,
         namespace: promptToExport.namespace,
-        prompt: promptToExport.prompt
+        prompt: promptToExport.prompt,
+        metadata: promptToExport.metadata || {},
       }
 
       await fsPromises.writeFile(
@@ -415,6 +418,9 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
                 {isCurrent && (
                   <Text bold color="green"> (current)</Text>
                 )}
+                {v.metadata?.model && (
+                  <Text color="green"> [{v.metadata.model}]</Text>
+                )}
               </Box>
             )
           })}
@@ -484,6 +490,9 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
                 </Text>
                 {isCurrent && (
                   <Text bold color="green"> (current)</Text>
+                )}
+                {v.metadata?.model && (
+                  <Text color="green"> [{v.metadata.model}]</Text>
                 )}
               </Box>
             )
@@ -611,6 +620,31 @@ export const PromptDetail: React.FC<PromptDetailProps> = ({
             </Box>
           )}
         </Box>
+
+        {/* Metadata panel */}
+        {prompt.metadata && Object.keys(prompt.metadata).length > 0 && (
+          <Box flexDirection="column" marginTop={1}>
+            <Text bold color="cyan">Metadata</Text>
+            {prompt.metadata.model && (
+              <Text>  Model: <Text color="green">{prompt.metadata.model}</Text></Text>
+            )}
+            {prompt.metadata.description && (
+              <Text>  Description: {prompt.metadata.description}</Text>
+            )}
+            {prompt.metadata.config && (
+              <Text>  Config: {JSON.stringify(prompt.metadata.config)}</Text>
+            )}
+            {prompt.metadata.tools && prompt.metadata.tools.length > 0 && (
+              <Text>  Tools: {prompt.metadata.tools.join(", ")}</Text>
+            )}
+            {prompt.metadata.input?.schema && (
+              <Text>  Input Schema: {JSON.stringify(prompt.metadata.input.schema)}</Text>
+            )}
+            {prompt.metadata.output && (
+              <Text>  Output: {prompt.metadata.output.format || "text"}{prompt.metadata.output.schema ? ` — ${JSON.stringify(prompt.metadata.output.schema)}` : ""}</Text>
+            )}
+          </Box>
+        )}
 
         {/* Separator */}
         <Box>

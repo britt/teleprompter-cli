@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test"
-import { extractVariables, compileTemplate, VariableInfo } from "./template-parser"
+import { extractVariables, compileTemplate, stripFrontmatter, VariableInfo } from "./template-parser"
 
 describe("template-parser", () => {
   describe("extractVariables", () => {
@@ -100,5 +100,51 @@ describe("template-parser", () => {
       const result = compileTemplate("{{#unless disabled}}Active{{/unless}}", { disabled: false })
       expect(result).toBe("Active")
     })
+  })
+})
+
+describe("stripFrontmatter", () => {
+  test("strips YAML frontmatter from dotprompt source", () => {
+    const source = "---\nmodel: test\nconfig:\n  temperature: 0.5\n---\nHello {{name}}"
+    expect(stripFrontmatter(source)).toBe("Hello {{name}}")
+  })
+
+  test("returns plain template unchanged", () => {
+    expect(stripFrontmatter("Hello {{name}}")).toBe("Hello {{name}}")
+  })
+
+  test("handles empty frontmatter", () => {
+    expect(stripFrontmatter("---\n---\nHello {{name}}")).toBe("Hello {{name}}")
+  })
+
+  test("handles CRLF line endings", () => {
+    expect(stripFrontmatter("---\r\nmodel: test\r\n---\r\nHello {{name}}")).toBe("Hello {{name}}")
+  })
+
+  test("does not strip --- that appears mid-template", () => {
+    expect(stripFrontmatter("Draw a line:\n---\nEnd")).toBe("Draw a line:\n---\nEnd")
+  })
+
+  test("handles frontmatter-only source (no body)", () => {
+    expect(stripFrontmatter("---\nmodel: test\n---\n")).toBe("")
+  })
+})
+
+describe("extractVariables with dotprompt", () => {
+  test("extracts variables from template body, ignoring frontmatter", () => {
+    const source = "---\nmodel: test\ninput:\n  schema:\n    name: string\n---\nHello {{name}}, welcome to {{place}}"
+    const vars = extractVariables(source)
+    expect(vars.map(v => v.name)).toContain("name")
+    expect(vars.map(v => v.name)).toContain("place")
+    expect(vars.map(v => v.name)).not.toContain("model")
+  })
+})
+
+describe("compileTemplate with dotprompt", () => {
+  test("compiles template body, ignoring frontmatter", () => {
+    const source = "---\nmodel: test\n---\nHello {{name}}"
+    const result = compileTemplate(source, { name: "World" })
+    expect(result).toBe("Hello World")
+    expect(result).not.toContain("---")
   })
 })
